@@ -1,4 +1,4 @@
-# musicmoodring
+# Music Mood Ring
 
 Given a set of lyrics for a song, we are attempting to predict the mood of the song. 
 The original paper uses lyrics as well as audio, however, we are simplifying this to be just lyrics. 
