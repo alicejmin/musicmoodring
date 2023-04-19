@@ -2,12 +2,12 @@ import tensorflow as tf
 import numpy as np
 import pickle
 import csv
+import pandas as pd 
 
 
 def get_data(file_path):
     # read in data
-    with open(file_path) as csvfile:
-        data = csv.reader(csvfile)
+    data = pd.read_csv(file_path)
 
     lyrics = data['lyrics']  # or maybe change to index?
     labels = data['label']  # or maybe change to index?
