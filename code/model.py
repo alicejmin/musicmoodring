@@ -24,6 +24,7 @@ class Model(tf.keras.Model):
             learning_rate=self.lr)
         self.padding = "SAME"
         self.embedding_size = ?
+        self.vocab_size = None # pick a number 
 
         # need embedding layer??
 
@@ -39,15 +40,22 @@ class Model(tf.keras.Model):
         # Dropout
         self.dropout = tf.keras.layers.Dropout(.5)
         # dense
-        self.dense1 = tf.keras.layers.Dense()
+        self.dense1 = tf.keras.layers.Dense()  # what activation
         # dropout
         # dense
-        self.dense2 = tf.keras.layers.Dense()
+        self.dense2 = tf.keras.layers.Dense()  # what activation
 
     def call(self, inputs):
 
         # apply layers to inputs and return logits
-        pass
+        logits = self.conv1d(inputs)
+        logits = self.max_pool(logits)
+        logits = self.LSTM(logits)
+        logits = self.dropout(logits)
+        logits = self.dense1(logits)
+        logits = self.dense2(logits)
+
+        return logits
 
     def loss(self, logits, labels):
 
