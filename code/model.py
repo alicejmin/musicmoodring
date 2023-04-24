@@ -34,7 +34,7 @@ class Model(tf.keras.Model):
         # how should we determine hypers here
         self.conv1d = tf.keras.layers.Conv1D(1, 3)
         # max pool
-        self.max_pool = tf.keras.layers.MaxPool1D()
+        self.max_pool = tf.keras.layers.MaxPool1D() #or tf.nn.max_pool()
         # LSTM
         self.LSTM = tf.keras.layers.LSTM(self.embedding_size)
         # Dropout
@@ -42,6 +42,7 @@ class Model(tf.keras.Model):
         # dense
         self.dense1 = tf.keras.layers.Dense()  # what activation
         # dropout
+        self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
         self.dense2 = tf.keras.layers.Dense()  # what activation
 
@@ -53,6 +54,7 @@ class Model(tf.keras.Model):
         logits = self.LSTM(logits)
         logits = self.dropout(logits)
         logits = self.dense1(logits)
+        logits = self.dropout2(logits)
         logits = self.dense2(logits)
 
         return logits
@@ -61,6 +63,7 @@ class Model(tf.keras.Model):
 
         # define a reasonable loss function
         # (in the paper they use valance and arousal? maybe we pick something else)
+
         pass
 
     def accuracy(self, logits, labels):
@@ -73,6 +76,9 @@ class Model(tf.keras.Model):
 def train(model, train_inputs, train_labels):
 
     # POSSIBLE WE DO NOT NEED THIS -- CAN WE JUST USE .fit AND .evalutate IN MAIN?
+    
+    #lucy i feel like it would be more accurate/better if we used gradient tape?
+    #or do .fit and .evaluate cover that for you
 
     # train model -- maybe shuffle inputs -- look at hw2 and hw3
     # return average accuracy? maybe loss too (looking at one epoc only)
@@ -82,6 +88,8 @@ def train(model, train_inputs, train_labels):
 def test(model, test_inputs, test_labels):
 
     # POSSIBLE WE DO NOT NEED THIS -- CAN WE JUST USE .fit AND .evalutate IN MAIN?
+
+    #same question as above
 
     # Tests the model on the test inputs and labels.
     # return average accuracy?
