@@ -23,8 +23,10 @@ class Model(tf.keras.Model):
         self.optimizer = tf.keras.optimizers.Adam(
             learning_rate=self.lr)
         self.padding = "SAME"
-        self.embedding_size = ?
+        self.embedding_size = None #need to change later
         self.vocab_size = None # pick a number 
+        self.hidden_size = None #need to change later
+        
 
         # need embedding layer??
         self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size)
@@ -33,19 +35,21 @@ class Model(tf.keras.Model):
 
         # 1D conv layer
         # how should we determine hypers here
-        self.conv1d = tf.keras.layers.Conv1D(1, 3)
+        self.conv1d = tf.keras.layers.Conv1D(1, 3, strides=1, padding=self.padding)
         # max pool
-        self.max_pool = tf.keras.layers.MaxPool1D() #or tf.nn.max_pool()
+        # self.max_pool = tf.keras.layers.MaxPool1D() #or 
+        self.max_pool = tf.nn.max_pool(self.conv1d, [3, 3], strides=1, padding=self.padding)
         # LSTM
-        self.LSTM = tf.keras.layers.LSTM(self.embedding_size)
+        self.LSTM = tf.keras.layers.LSTM(self.embedding_size, activation="leaky_relu")
         # Dropout
         self.dropout = tf.keras.layers.Dropout(.5)
         # dense
-        self.dense1 = tf.keras.layers.Dense()  # what activation
+        self.dense1 = tf.keras.layers.Dense(self.hidden_size, activation="leaky_relu")  # what activation
         # dropout
         self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
-        self.dense2 = tf.keras.layers.Dense()  # what activation
+        self.dense2 = tf.keras.layers.Dense(self.vocab_size, activation="softmax")  # what activation
+        #output of last dense layer should be vocab size, activation should be softmax
 
         self.optimizer = tf.keras.optimizers.Adam(self.lr)
         self.loss = tf.keras.losses.SparseCategoricalCrossentropy()
@@ -68,7 +72,10 @@ class Model(tf.keras.Model):
 
         # define a reasonable accuracy function
         # (maybe different from paper)
-        pass
+        cross_ent = tf.math.reduce_mean(tf.keras.metrics.sparse_categorical_crossentropy(labels, logits)) #.losses or .metrics
+        perplex = tf.math.exp(cross_ent)
+        return perplex
+
 
 
 def train(model, train_inputs, train_labels):
