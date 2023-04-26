@@ -16,7 +16,7 @@ class Model(tf.keras.Model):
         # optimizer
         # padding
         self.batch_size = 32  # no idea
-        self.num_classes = 9
+        self.num_classes = 3
         self.lr = .01
         self.epochs = 10
         # self.stride = (default is 1 so only need this if want something different?)
@@ -38,7 +38,7 @@ class Model(tf.keras.Model):
         self.conv1d = tf.keras.layers.Conv1D(1, 3, strides=1, padding=self.padding)
         # max pool
         # self.max_pool = tf.keras.layers.MaxPool1D() #or 
-        self.max_pool = tf.nn.max_pool(self.conv1d, [3, 3], strides=1, padding=self.padding) # input?? change -- should not be self.conv1d
+        #self.max_pool = tf.nn.max_pool(self.conv1d, [3, 3], strides=1, padding=self.padding) # input?? change -- should not be self.conv1d
         # LSTM
         self.LSTM = tf.keras.layers.LSTM(self.embedding_size, activation="leaky_relu")
         # Dropout
@@ -59,7 +59,7 @@ class Model(tf.keras.Model):
         # apply layers to inputs and return logits
         logits = self.embedding(inputs)
         logits = self.conv1d(logits)
-        logits = self.max_pool(logits)
+        logits = tf.nn.max_pool(logits, 3, strides=1, padding=self.padding) # 3 or [3, 3]?
         logits = self.LSTM(logits)
         logits = self.dropout(logits)
         logits = self.dense1(logits)
@@ -89,7 +89,7 @@ def train(model, train_lyrics, train_labels):
     # return average accuracy? maybe loss too (looking at one epoc only)
     avg_acc = 0
     counter = 0
-    for batch_num, b1 in enumerate(range(model.batch_size, train_lyrics.shape[0] + 1, model.batch_size)):
+    for batch_num, b1 in enumerate(range(model.batch_size, len(train_lyrics) + 1, model.batch_size)): # train_lyrics.shape[0] + 1 if tensor
         b0 = b1 - model.batch_size
         batch_lyrics = train_lyrics[b0:b1]
         batch_labels = train_labels[b0:b1]
@@ -103,10 +103,10 @@ def train(model, train_lyrics, train_labels):
         acc = model.accuracy(logits, batch_labels)
         avg_acc += acc
         counter += 1
-        print("TRAIN", "batch:", batch_num, "acc:", acc)
-        print("TRAIN", "batch:", batch_num, "loss:", loss)
+        # print("TRAIN", "batch:", batch_num, "acc:", acc)
+        # print("TRAIN", "batch:", batch_num, "loss:", loss)
     
-    print("average accuracy:", avg_acc/counter)
+    #print("average accuracy:", avg_acc/counter)
 
     return
 
@@ -122,7 +122,7 @@ def test(model, test_lyrics, test_labels):
 
     avg_acc = 0
     counter = 0
-    for batch_num, b1 in enumerate(range(model.batch_size, test_lyrics.shape[0] + 1, model.batch_size)):
+    for batch_num, b1 in enumerate(range(model.batch_size, len(test_lyrics) + 1, model.batch_size)): # make test_lyrics.shape[0] + 1 if we get a tensor
         b0 = b1 - model.batch_size
         batch_lyrics = test_lyrics[b0:b1]
         batch_labels = test_labels[b0:b1]
@@ -133,8 +133,8 @@ def test(model, test_lyrics, test_labels):
         acc = model.accuracy(logits, batch_labels)
         avg_acc += acc
         counter += 1
-        print("TEST", "batch:", batch_num, "acc:", acc)
-        print("TEST", "batch:", batch_num, "loss:", loss)
+        # print("TEST", "batch:", batch_num, "acc:", acc)
+        # print("TEST", "batch:", batch_num, "loss:", loss)
 
     return avg_acc/counter
 
@@ -152,9 +152,9 @@ def main():
     for _ in range(model.epochs):
         train(model, train_lyrics, train_labels)
 
-    t = test(model, test_lyrics, test_labels)
+    # t = test(model, test_lyrics, test_labels)
     
-    print("FINAL TEST ACC:", t)
+    # print("FINAL TEST ACC:", t)
 
     return
 

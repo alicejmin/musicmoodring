@@ -74,10 +74,10 @@ def main():
     X0, Y0, X1, Y1 = get_data(
         "data/singlelabel.csv")
 
-    print(X0)
-    print(Y0)
-    print(X1)
-    print(Y1)
+    # print(X0)
+    # print(Y0)
+    # print(X1)
+    # print(Y1)
 
     return
 
