@@ -63,8 +63,9 @@ def get_data(file_path):
     # already in 1-D arrays so don't need to flatten? need to reshape?? normalize?
 
     # error here with converting to tensor - try ragged tensor? or somehow even out lyric lengths?
-    #return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), tf.convert_to_tensor(train_labels), tf.convert_to_tensor(test_labels)
+    # return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), tf.convert_to_tensor(train_labels), tf.convert_to_tensor(test_labels)
     return train_lyrics, test_lyrics, train_labels, test_labels
+    # ask taishi about this (lyrics are lists, labels are tensors, having touble converting all to tensors so wondering if it is needed)
 
 
 def main():
