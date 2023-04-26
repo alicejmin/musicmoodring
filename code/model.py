@@ -27,6 +27,7 @@ class Model(tf.keras.Model):
         self.vocab_size = None # pick a number 
 
         # need embedding layer??
+        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size)
 
         # look at paper for proper sizes and hypers
 
@@ -46,10 +47,14 @@ class Model(tf.keras.Model):
         # dense
         self.dense2 = tf.keras.layers.Dense()  # what activation
 
+        self.optimizer = tf.keras.optimizers.Adam(self.lr)
+        self.loss = tf.keras.losses.SparseCategoricalCrossentropy()
+
     def call(self, inputs):
 
         # apply layers to inputs and return logits
-        logits = self.conv1d(inputs)
+        logits = self.embedding(inputs)
+        logits = self.conv1d(logits)
         logits = self.max_pool(logits)
         logits = self.LSTM(logits)
         logits = self.dropout(logits)
@@ -58,13 +63,6 @@ class Model(tf.keras.Model):
         logits = self.dense2(logits)
 
         return logits
-
-    def loss(self, logits, labels):
-
-        # define a reasonable loss function
-        # (in the paper they use valance and arousal? maybe we pick something else)
-
-        pass
 
     def accuracy(self, logits, labels):
 
