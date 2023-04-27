@@ -29,7 +29,7 @@ class Model(tf.keras.Model):
         
 
         # need embedding layer??
-        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size)
+        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size) 
 
         # look at paper for proper sizes and hypers
 
@@ -56,8 +56,7 @@ class Model(tf.keras.Model):
 
     def call(self, inputs):
 
-        # apply layers to inputs and return logits
-        logits = self.embedding(inputs)
+        logits = self.embedding(inputs) # ERROR HERE
         logits = self.conv1d(logits)
         logits = tf.nn.max_pool(logits, 3, strides=1, padding=self.padding) # 3 or [3, 3]?
         logits = self.LSTM(logits)
@@ -95,8 +94,8 @@ def train(model, train_lyrics, train_labels):
         batch_labels = train_labels[b0:b1]
 
         with tf.GradientTape() as tape:
-                logits = model(batch_lyrics) 
-                loss = model.loss(batch_labels, logits)
+            logits = model(batch_lyrics) 
+            loss = model.loss(batch_labels, logits)
         
         grads = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(grads, model.trainable_variables))
