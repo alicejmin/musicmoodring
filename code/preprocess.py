@@ -1,3 +1,4 @@
+import nltk
 from audioop import avg
 import tensorflow as tf
 import numpy as np
@@ -5,7 +6,6 @@ import pickle
 import csv
 import pandas as pd
 from functools import reduce
-import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
@@ -29,8 +29,19 @@ def get_data(file_path):
 
     stop_words = set(stopwords.words('english'))
 
-    lyrics = [[word.lower().strip("!()-',.?*{};:¡\"“‘~…’—–”")
+    lyrics = [[word.lower().strip("!()-',.?*{};:¡\"“‘~…’—–”\\")
                      for word in song.split() if word not in stop_words] for song in lyrics]
+    
+
+    mean = np.mean([len(song) for song in lyrics])
+    # test_mean = np.mean([len(song) for song in test_lyrics])
+    # mean = (train_mean + test_mean)/2
+    std = np.std([len(song) for song in lyrics])
+
+    upper_bound = mean + 2*std
+    lower_bound = mean - 2*std
+
+    lyrics = [song for song in lyrics if len(song) <= upper_bound and len(song) >= lower_bound] 
     # test_lyrics = [[word.lower().strip("!()-',.?*{};:¡\"“‘~…’—–”")
     #                 for word in song.split() if word not in stop_words] for song in test_lyrics]
 
@@ -44,18 +55,27 @@ def get_data(file_path):
     # for y in test_lyrics:
     #     test_lyrics_list.append(y.split())
 
-    unique = [sorted(set(x)) for x in lyrics]
-    # test_unique = [sorted(set(x)) for x in test_lyrics]
-    unique = []
-    for song in unique:
-        unique_line = [word for word in song if word not in unique]
-        unique.extend(unique_line)
-    # for song in test_unique:
+    # train_unique = sorted(set(train_data))
+    # test_unique = sorted(set(test_data))
+    # unique = sorted(set(train_unique + test_unique))
+
+    # unique = [sorted(set(x)) for x in lyrics]
+    # # test_unique = [sorted(set(x)) for x in test_lyrics]
+    # unique = []
+    # for song in unique:
     #     unique_line = [word for word in song if word not in unique]
     #     unique.extend(unique_line)
-    unique = sorted(unique)
+    # # for song in test_unique:
+    # #     unique_line = [word for word in song if word not in unique]
+    # #     unique.extend(unique_line)
+    # unique = sorted(unique)
 
-    vocabulary = {w: i for i, w in enumerate(unique)}
+    unique = []
+    for song in lyrics:
+        unique.extend(song)
+    unique = sorted(set(unique))
+
+    vocabulary = {w: i for i, w in enumerate(unique, start=1)}
 
     lyrics = [list(map(lambda x: vocabulary[x], song))
                     for song in lyrics]
@@ -64,23 +84,14 @@ def get_data(file_path):
  
     # get rid of outliers 
     # find mean and std 
-    mean = np.mean([len(song) for song in lyrics])
-    # test_mean = np.mean([len(song) for song in test_lyrics])
-    # mean = (train_mean + test_mean)/2
-    std = np.std(lyrics)
-
-    upper_bound = mean + 2*std
-    lower_bound = mean - 2*std
-
-    lyrics = [song for song in lyrics if len(song) <= upper_bound and len(song) >= lower_bound] 
     
     # tf.keras.preprocess.sequence.padsequence? padding post or pre? 
 
-    train_lyrics = tf.keras.utils.pad_sequences(lyrics, value=-1, padding='post') # returns np array
+    lyrics = tf.keras.preprocessing.sequence.pad_sequences(lyrics, padding='post') # returns np array
     # test_lyrics = tf.keras.utils.pad_sequences(test_lyrics, value=-1, padding='post')
 
     # total = 1160, 80% = 928, 20% = 232
-    train_lyrics, test_lyrics = lyrics[:928], lyrics[928:]
+    train_lyrics, test_lyrics = lyrics[:928], lyrics[928:] # fix bc nums won't be the same 
     train_labels, test_labels = labels[:928], labels[928:]
 
     # error here with converting to tensor - try ragged tensor? or somehow even out lyric lengths?
