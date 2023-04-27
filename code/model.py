@@ -74,6 +74,10 @@ class Model(tf.keras.Model):
         # define a reasonable accuracy function
         # (maybe different from paper)
         # hw 5 acc? 
+        # correct_classes = tf.argmax(logits, axis=-1) == labels
+        # accuracy = tf.reduce_mean(tf.boolean_mask(tf.cast(correct_classes, tf.float32), mask)) #not sure what mask input would be
+        # return accuracy
+
         cross_ent = tf.math.reduce_mean(self.loss(labels, logits)) #.losses or .metrics
         perplex = tf.math.exp(cross_ent)
         return perplex
@@ -83,9 +87,6 @@ class Model(tf.keras.Model):
 def train(model, train_lyrics, train_labels):
 
     # POSSIBLE WE DO NOT NEED THIS -- CAN WE JUST USE .fit AND .evalutate IN MAIN?
-    
-    #lucy i feel like it would be more accurate/better if we used gradient tape?
-    #or do .fit and .evaluate cover that for you
 
     # train model -- maybe shuffle inputs -- look at hw2 and hw3
     # return average accuracy? maybe loss too (looking at one epoc only)
@@ -109,18 +110,20 @@ def train(model, train_lyrics, train_labels):
             # batch_labels = (32, 3)
             loss = model.loss(batch_labels, logits)
         
-        grads = tape.gradient(loss, model.trainable_variables)
-        model.optimizer.apply_gradients(zip(grads, model.trainable_variables))
+            grads = tape.gradient(loss, model.trainable_variables)
+            model.optimizer.apply_gradients(zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
         avg_acc += acc
         avg_loss += loss
         counter += 1
         # print("TRAIN", "batch:", batch_num, "acc:", acc)
         # print("TRAIN", "batch:", batch_num, "loss:", loss)
-    
-    print("average accuracy:", avg_acc/counter, "average loss:", avg_loss/counter)
 
-    return 
+        print(f"\r[Valid {batch_num+1}/{counter}]\t loss={avg_loss:.3f}\t acc: {avg_acc:.3f}", end='')
+        # print("average accuracy:", avg_acc/counter, "average loss:", avg_loss/counter)
+
+    print()
+    return avg_loss, avg_acc
 
 
 def test(model, test_lyrics, test_labels):
