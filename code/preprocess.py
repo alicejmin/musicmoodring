@@ -23,7 +23,7 @@ def get_data(file_path):
     indices = [0 if x == 'Sadness' else 1 if x ==
                'Tension' else 2 for x in labels]
 
-    labels = tf.one_hot(indices, 3)
+    labels = tf.one_hot(indices, 3, dtype=tf.int64)
 
     # IF WE WANT EACH SET OF LYRICS TO HAVE ITS OWN LIST
 
