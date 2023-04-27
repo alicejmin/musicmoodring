@@ -24,7 +24,7 @@ class Model(tf.keras.Model):
             learning_rate=self.lr)
         self.padding = "SAME"
         self.embedding_size = 64 #need to change later
-        self.vocab_size = 128 # pick a number 
+        self.vocab_size = 15245 # change later
         self.hidden_size = 256 #need to change later
         
 
@@ -48,18 +48,16 @@ class Model(tf.keras.Model):
         # dropout
         self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
-        self.dense2 = tf.keras.layers.Dense(self.vocab_size, activation="softmax")  # what activation
+        self.dense2 = tf.keras.layers.Dense(self.num_classes, activation="softmax")  # what activation
         #output of last dense layer should be vocab size, activation should be softmax
+        # change this last layer to be num_examples? 
 
         self.optimizer = tf.keras.optimizers.Adam(self.lr)
-        self.loss = tf.keras.losses.SparseCategoricalCrossentropy()
+        self.loss = tf.keras.losses.CategoricalCrossentropy() #tf.keras.losses.SparseCategoricalCrossentropy()
 
     def call(self, inputs):
 
         # apply layers to inputs and return logits
-        print("inputs:")
-        print(inputs)
-        print("done")
         logits = self.embedding(inputs)
 
         #Error with line 60: Exception encountered when calling layer 'embedding' (type Embedding).
@@ -80,7 +78,8 @@ class Model(tf.keras.Model):
 
         # define a reasonable accuracy function
         # (maybe different from paper)
-        cross_ent = tf.math.reduce_mean(tf.keras.metrics.sparse_categorical_crossentropy(labels, logits)) #.losses or .metrics
+        # hw 5 acc? 
+        cross_ent = tf.math.reduce_mean(self.loss(labels, logits)) #.losses or .metrics
         perplex = tf.math.exp(cross_ent)
         return perplex
 
@@ -95,28 +94,37 @@ def train(model, train_lyrics, train_labels):
 
     # train model -- maybe shuffle inputs -- look at hw2 and hw3
     # return average accuracy? maybe loss too (looking at one epoc only)
+
+    # lyrics = (928, 529)
+    # labels = (928, 3)
     avg_acc = 0
+    avg_loss = 0
     counter = 0
     for batch_num, b1 in enumerate(range(model.batch_size, len(train_lyrics) + 1, model.batch_size)): # train_lyrics.shape[0] + 1 if tensor
         b0 = b1 - model.batch_size
         batch_lyrics = train_lyrics[b0:b1]
         batch_labels = train_labels[b0:b1]
+        # batch_lyrics = (32, 529)
+        # batch_labels = (32, 3)
 
         with tf.GradientTape() as tape:
             logits = model(batch_lyrics) 
+            # logits = (32, 15244)
+            # batch_labels = (32, 3)
             loss = model.loss(batch_labels, logits)
         
         grads = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
         avg_acc += acc
+        avg_loss += loss
         counter += 1
         # print("TRAIN", "batch:", batch_num, "acc:", acc)
         # print("TRAIN", "batch:", batch_num, "loss:", loss)
     
-    #print("average accuracy:", avg_acc/counter)
+    print("average accuracy:", avg_acc/counter, "average loss:", avg_loss/counter)
 
-    return
+    return 
 
 
 def test(model, test_lyrics, test_labels):
@@ -129,6 +137,7 @@ def test(model, test_lyrics, test_labels):
     # return average accuracy?
 
     avg_acc = 0
+    avg_loss = 0
     counter = 0
     for batch_num, b1 in enumerate(range(model.batch_size, len(test_lyrics) + 1, model.batch_size)): # make test_lyrics.shape[0] + 1 if we get a tensor
         b0 = b1 - model.batch_size
@@ -140,11 +149,12 @@ def test(model, test_lyrics, test_labels):
 
         acc = model.accuracy(logits, batch_labels)
         avg_acc += acc
+        avg_loss += loss
         counter += 1
         # print("TEST", "batch:", batch_num, "acc:", acc)
         # print("TEST", "batch:", batch_num, "loss:", loss)
 
-    return avg_acc/counter
+    return avg_acc/counter, avg_loss/counter
 
 
 def main():
@@ -157,12 +167,13 @@ def main():
     
     model = Model()
 
-    for _ in range(model.epochs):
+    for e in range(model.epochs):
+        print("epoch", e)
         train(model, train_lyrics, train_labels)
 
-    # t = test(model, test_lyrics, test_labels)
+    t = test(model, test_lyrics, test_labels)
     
-    # print("FINAL TEST ACC:", t)
+    print("FINAL TEST ACC:", t)
 
     return
 
