@@ -56,7 +56,16 @@ class Model(tf.keras.Model):
 
     def call(self, inputs):
 
-        logits = self.embedding(inputs) # ERROR HERE
+        # apply layers to inputs and return logits
+        print("inputs:")
+        print(inputs)
+        print("done")
+        logits = self.embedding(inputs)
+
+        #Error with line 60: Exception encountered when calling layer 'embedding' (type Embedding).
+        # 'list' object has no attribute 'dtype'
+        # Call arguments received by layer 'embedding' (type Embedding):
+
         logits = self.conv1d(logits)
         logits = tf.nn.max_pool(logits, 3, strides=1, padding=self.padding) # 3 or [3, 3]?
         logits = self.LSTM(logits)
