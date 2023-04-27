@@ -57,12 +57,7 @@ class Model(tf.keras.Model):
 
     def call(self, inputs):
 
-        # apply layers to inputs and return logits
         logits = self.embedding(inputs)
-
-        #Error with line 60: Exception encountered when calling layer 'embedding' (type Embedding).
-        # 'list' object has no attribute 'dtype'
-        # Call arguments received by layer 'embedding' (type Embedding):
 
         logits = self.conv1d(logits)
         logits = tf.nn.max_pool(logits, 3, strides=1, padding=self.padding) # 3 or [3, 3]?
@@ -100,6 +95,7 @@ def train(model, train_lyrics, train_labels):
     avg_acc = 0
     avg_loss = 0
     counter = 0
+
     for batch_num, b1 in enumerate(range(model.batch_size, len(train_lyrics) + 1, model.batch_size)): # train_lyrics.shape[0] + 1 if tensor
         b0 = b1 - model.batch_size
         batch_lyrics = train_lyrics[b0:b1]
