@@ -79,9 +79,15 @@ class Model(tf.keras.Model):
         # accuracy = tf.reduce_mean(tf.boolean_mask(tf.cast(correct_classes, tf.float32), mask)) #not sure what mask input would be
         # return accuracy
 
-        cross_ent = tf.math.reduce_mean(self.loss(labels, logits)) #.losses or .metrics
-        perplex = tf.math.exp(cross_ent)
-        return perplex
+        # cross_ent = tf.math.reduce_mean(self.loss(labels, logits)) #.losses or .metrics
+        # perplex = tf.math.exp(cross_ent)
+        # return perplex
+        num_correct_classes = 0
+        for song in range(logits.shape[0]):
+            if tf.argmax(logits[song], axis=-1) == tf.argmax(labels[song]):
+                num_correct_classes += 1 
+        accuracy = num_correct_classes/logits.shape[0]
+        return accuracy
 
 
 
@@ -121,11 +127,11 @@ def train(model, train_lyrics, train_labels):
         # print("TRAIN", "batch:", batch_num, "acc:", acc)
         # print("TRAIN", "batch:", batch_num, "loss:", loss)
 
-        print(f"\r[Valid {batch_num+1}/{counter}]\t loss={avg_loss:.3f}\t acc: {avg_acc:.3f}", end='')
+        print(f"\r[Train {batch_num+1}/{model.batch_size}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
         # print("average accuracy:", avg_acc/counter, "average loss:", avg_loss/counter)
 
     print()
-    return avg_loss, avg_acc
+    return avg_loss/counter, avg_acc/counter
 
 
 def test(model, test_lyrics, test_labels):
@@ -169,7 +175,7 @@ def main():
     model = Model()
 
     for e in range(model.epochs):
-        print("epoch", e)
+        print("epoch", e+1)
         train(model, train_lyrics, train_labels)
 
     t = test(model, test_lyrics, test_labels)
