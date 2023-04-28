@@ -113,6 +113,7 @@ def train(model, train_lyrics, train_labels):
             grads = tape.gradient(loss, model.trainable_variables)
             model.optimizer.apply_gradients(zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
+        
         avg_acc += acc
         avg_loss += loss
         counter += 1
@@ -172,8 +173,15 @@ def main():
 
     t = test(model, test_lyrics, test_labels)
     
-    print("FINAL TEST ACC:", t)
+    # print(f"\r[Valid {batch_num+1}/{counter}]\t loss={avg_loss:.3f}\t acc: {avg_acc:.3f}", end='')
 
+    #made epochs four for now
+
+    #print("FINAL TEST ACC:", t) #cant get this to print out of a tensor
+    
+    # print("FINAL", t)
+
+    tf.print("Final Accuracy:", t[0]) #this is not printing the right thing/accuracy is really low for final for some reason
     return
 
 
