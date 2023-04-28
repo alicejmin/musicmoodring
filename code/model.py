@@ -29,18 +29,19 @@ class Model(tf.keras.Model):
         
 
         # need embedding layer??
-        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size) 
+        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size,embeddings_initializer="zero") #the default initializer here is "uniform" we can play around with it
 
         # look at paper for proper sizes and hypers
 
+        #did some research... top three seem to be HeNormal, Kaiming, and Xavier but dont know which is best still getting nan
         # 1D conv layer
         # how should we determine hypers here
-        self.conv1d = tf.keras.layers.Conv1D(1, 3, strides=1, padding=self.padding)
+        self.conv1d = tf.keras.layers.Conv1D(1, 3, strides=1, padding=self.padding, kernel_initializer="HeNormal") #I think HeNormal(kaiming) is best, top  seem to be xavier, and he normal
         # max pool
         # self.max_pool = tf.keras.layers.MaxPool1D() #or 
         #self.max_pool = tf.nn.max_pool(self.conv1d, [3, 3], strides=1, padding=self.padding) # input?? change -- should not be self.conv1d
         # LSTM
-        self.LSTM = tf.keras.layers.LSTM(self.embedding_size, activation="leaky_relu")
+        self.LSTM = tf.keras.layers.LSTM(self.embedding_size, activation="leaky_relu") #these also all have initializers
         # Dropout
         self.dropout = tf.keras.layers.Dropout(.5)
         # dense
