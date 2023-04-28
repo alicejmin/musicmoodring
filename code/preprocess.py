@@ -20,11 +20,6 @@ def get_data(file_path):
     lyrics = data['lyrics']
     labels = data['label']
 
-    indices = [0 if x == 'Sadness' else 1 if x ==
-               'Tension' else 2 for x in labels]
-
-    labels = tf.one_hot(indices, 3, dtype=tf.int64)
-
     # IF WE WANT EACH SET OF LYRICS TO HAVE ITS OWN LIST
 
     stop_words = set(stopwords.words('english'))
@@ -41,7 +36,19 @@ def get_data(file_path):
     upper_bound = mean + 2*std
     lower_bound = mean - 2*std
 
-    lyrics = [song for song in lyrics if len(song) <= upper_bound and len(song) >= lower_bound] 
+    indices = np.nonzero([1 if len(song) <= upper_bound and len(song) >= lower_bound else 0 for song in lyrics])[0]
+    # lyrics = [song[np.nonzero(index)] for song in lyrics for index in indices]
+    # labels = [song[np.nonzero(index)] for song in labels for index in indices]
+    lyrics = np.take(lyrics, indices)
+    labels = np.take(labels, indices)
+
+    indices = [0 if x == 'Sadness' else 1 if x ==
+               'Tension' else 2 for x in labels]
+
+    labels = tf.one_hot(indices, 3, dtype=tf.int64)
+
+    # [song for song in lyrics if len(song) <= upper_bound and len(song) >= lower_bound]
+
     # test_lyrics = [[word.lower().strip("!()-',.?*{};:¡\"“‘~…’—–”")
     #                 for word in song.split() if word not in stop_words] for song in test_lyrics]
 
@@ -88,11 +95,11 @@ def get_data(file_path):
     # tf.keras.preprocess.sequence.padsequence? padding post or pre? 
 
     lyrics = tf.keras.preprocessing.sequence.pad_sequences(lyrics, padding='post') # returns np array
+    print(len(lyrics[0]))
     # test_lyrics = tf.keras.utils.pad_sequences(test_lyrics, value=-1, padding='post')
-
-    # total = 1160, 80% = 928, 20% = 232
-    train_lyrics, test_lyrics = lyrics[:928], lyrics[928:] # fix bc nums won't be the same 
-    train_labels, test_labels = labels[:928], labels[928:]
+    # total = 1160, 80% = 882, 20% = 221
+    train_lyrics, test_lyrics = lyrics[:882], lyrics[882:] # fix bc nums won't be the same 
+    train_labels, test_labels = labels[:882], labels[882:]
 
     # error here with converting to tensor - try ragged tensor? or somehow even out lyric lengths?
     # return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), tf.convert_to_tensor(train_labels), tf.convert_to_tensor(test_labels)
