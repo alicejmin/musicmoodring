@@ -15,11 +15,11 @@ class Model(tf.keras.Model):
         self.optimizer = tf.keras.optimizers.Adam(
             learning_rate=self.lr)
         self.padding = "SAME"
-        self.embedding_size = 100 
+        self.embedding_size = 100 #80? (from paper)
         self.vocab_size = 15245 
         self.hidden_size = 256 
         
-        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size, embeddings_initializer="zero") #the default initializer here is "uniform" we can play around with it
+        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size, embeddings_initializer="uniform") #the default initializer here is "uniform" we can play around with it
 
         self.permute = tf.keras.layers.Permute((2, 1), input_shape=(529, 64))
 
@@ -88,11 +88,19 @@ def train(model, train_lyrics, train_labels):
     avg_acc = 0
     avg_loss = 0
     counter = 0
+
+
+    index_range = tf.random.shuffle(range(len(train_lyrics))) #use train_captions or image_features or both?
+    shuffled_lyrics = tf.gather(train_lyrics, index_range)
+    shuffled_labels = tf.gather(train_labels, index_range) #do these also need to be shuffled?
+
+
     for batch_num, b1 in enumerate(range(model.batch_size, len(train_lyrics) + 1, model.batch_size)): # train_lyrics.shape[0] + 1 if tensor
         b0 = b1 - model.batch_size
-        batch_lyrics = train_lyrics[b0:b1]
-        batch_labels = train_labels[b0:b1]
+        batch_lyrics = shuffled_lyrics[b0:b1]
+        batch_labels = shuffled_labels[b0:b1]
 
+        
         with tf.GradientTape() as tape:
             logits = model(batch_lyrics) 
 
