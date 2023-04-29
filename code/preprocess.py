@@ -110,6 +110,8 @@ def get_data(file_path):
 def main():
     # can delete later -- just for testing
 
+    # LUCY IS IT WORKING YET
+
     X0, Y0, X1, Y1 = get_data(
         "data/singlelabel.csv")
 
