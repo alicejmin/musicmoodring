@@ -27,11 +27,13 @@ class Model(tf.keras.Model):
         self.conv1d = tf.keras.layers.Conv1D(16, 2, strides=2, padding=self.padding, activation="relu", kernel_initializer="HeNormal") #I think HeNormal(kaiming) is best, top  seem to be xavier, and he normal
         
         # flatten?
-        self.permute2 = tf.keras.layers.Permute((1, 2), input_shape=(529, 64))
+        self.permute2 = tf.keras.layers.Permute((1, 2), input_shape=(529, 64)) # does this do anything??
         # LSTM
         self.LSTM = tf.keras.layers.LSTM(self.embedding_size, activation="leaky_relu") # what size??
+        self.drop = tf.keras.layers.Dropout(.5)
+        # self.flat = tf.keras.layers.Flatten()
         # Dropout
-        self.seq = tf.keras.Sequential([tf.keras.layers.Dense(self.hidden_size, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="softmax")])
+        self.seq = tf.keras.Sequential([tf.keras.layers.Dense(64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="softmax")])
         
         # dense
         # paper output is 64
@@ -65,9 +67,12 @@ class Model(tf.keras.Model):
         logits = self.permute2(logits)
         # print("4:", logits.shape) # [32, 50, 16] want: [25, 32, 16]
         logits = self.LSTM(logits)
+        # logits = self.flat(logits)
+        logits = self.drop(logits)
         # print("5:", logits.shape) # [32, 100]
         logits = self.seq(logits)
         # print("9:", logits.shape) # [32, 3]
+        # print(logits)
 
         return logits
 
@@ -120,7 +125,7 @@ def train(model, train_lyrics, train_labels):
         counter += 1
 
         print(f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
-
+    # print(logits)
     print()
     return avg_loss/counter, avg_acc/counter
 
