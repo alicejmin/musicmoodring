@@ -95,7 +95,6 @@ def get_data(file_path):
     # tf.keras.preprocess.sequence.padsequence? padding post or pre? 
 
     lyrics = tf.keras.preprocessing.sequence.pad_sequences(lyrics, padding='post') # returns np array
-    print(len(lyrics[0]))
     # test_lyrics = tf.keras.utils.pad_sequences(test_lyrics, value=-1, padding='post')
     # total = 1103, 80% = 882, 20% = 221
     train_lyrics, test_lyrics = lyrics[:882], lyrics[882:] # fix bc nums won't be the same 
