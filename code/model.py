@@ -27,42 +27,47 @@ class Model(tf.keras.Model):
         self.conv1d = tf.keras.layers.Conv1D(16, 2, strides=2, padding=self.padding, activation="relu", kernel_initializer="HeNormal") #I think HeNormal(kaiming) is best, top  seem to be xavier, and he normal
         
         # flatten?
-        self.permute2 = tf.keras.layers.Permute((2, 0, 1), input_shape=(529, 64))
+        self.permute2 = tf.keras.layers.Permute((1, 2), input_shape=(529, 64))
         # LSTM
         self.LSTM = tf.keras.layers.LSTM(self.embedding_size, activation="leaky_relu") # what size??
         # Dropout
-        self.dropout = tf.keras.layers.Dropout(.5)
+        self.seq = tf.keras.Sequential([tf.keras.layers.Dense(self.hidden_size, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="softmax")])
+        
         # dense
-        self.dense1 = tf.keras.layers.Dense(self.hidden_size, activation="tanh") # paper output is 64
+        # paper output is 64
         # dropout
-        self.dropout2 = tf.keras.layers.Dropout(.5)
+        # self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
-        self.dense2 = tf.keras.layers.Dense(self.num_classes, activation="softmax") # keep softmax??
 
         self.optimizer = tf.keras.optimizers.Adam(self.lr)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
 
     def call(self, inputs):
 
+        # 2: (32, 529, 100)
+        # 2.5: (32, 100, 529)
+        # 4: (32, 50, 16)
+        # 4: (32, 50, 16)
+        # 5: (32, 100)
+        # 6: (32, 100)
+        # 7: (32, 256)
+        # 8: (32, 256)
+        # 9: (32, 3)
+
         logits = self.embedding(inputs) 
-        print("2:", logits.shape) # [32, 529, 100]
+        # print("2:", logits.shape) # [32, 529, 100]
         logits = self.permute(logits) 
-        print("2.5:", logits.shape) # [32, 100, 529]
+        # print("2.5:", logits.shape) # [32, 100, 529]
         logits = self.conv1d(logits)
-        logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding) # 3 or [3, 3]?
-        print("4:", logits.shape) # [32, 50, 16]
+        #print(logits.shape) # 
+        logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding)
+        # print("4:", logits.shape) # [32, 50, 16] want: [32, 16, 25] 264?
         logits = self.permute2(logits)
-        print("4:", logits.shape)
+        # print("4:", logits.shape) # [32, 50, 16] want: [25, 32, 16]
         logits = self.LSTM(logits)
-        print("5:", logits.shape) # [32, 100]
-        logits = self.dropout(logits)
-        print("6:", logits.shape) # [32, 100]
-        logits = self.dense1(logits)
-        print("7:", logits.shape) # [32, 256]
-        logits = self.dropout2(logits)
-        print("8:", logits.shape) # [32, 256]
-        logits = self.dense2(logits)
-        print("9:", logits.shape) # [32, 3]
+        # print("5:", logits.shape) # [32, 100]
+        logits = self.seq(logits)
+        # print("9:", logits.shape) # [32, 3]
 
         return logits
 
