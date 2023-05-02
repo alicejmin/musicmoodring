@@ -37,11 +37,13 @@ def get_data(file_path):
     for song in range(len(lyrics)):
         lyrics[song] = lyrics[song][:50]
 
+
+    print("BEFORE", labels)
     indices = [0 if x == 'Sadness' else 1 if x ==
                'Tension' else 2 for x in labels]
 
     labels = tf.one_hot(indices, 3, dtype=tf.int64)
-
+    print("AFTER",labels)
     # IF WE WANT ONE LIST FOR ALL LYRICS
     # train_lyrics_list = []
     # for x in train_lyrics:
