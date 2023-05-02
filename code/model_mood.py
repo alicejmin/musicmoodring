@@ -1,6 +1,11 @@
 from preprocess_mood import get_data
 import tensorflow as tf
 import numpy as np
+#imports for plotting
+import pandas as pd
+import matplotlib.pyplot as plt
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
 
 class Model(tf.keras.Model):
@@ -18,6 +23,10 @@ class Model(tf.keras.Model):
         self.embedding_size = 100  # 80? (from paper)
         self.vocab_size = 15245
         self.hidden_size = 40  # 256
+        #for plot
+        self.epoch_list = []
+        self.plot_df = pd.DataFrame()
+        
 
         # the default initializer here is "uniform" we can play around with it
         self.embedding = tf.keras.layers.Embedding(
@@ -97,6 +106,7 @@ def train(model, train_lyrics, train_labels):
     avg_acc = 0
     avg_loss = 0
     counter = 0
+    
 
     # use train_captions or image_features or both?
     index_range = tf.random.shuffle(range(len(train_lyrics)))
@@ -123,10 +133,14 @@ def train(model, train_lyrics, train_labels):
         avg_acc += acc
         avg_loss += loss
         counter += 1
+        
+        model.epoch_list.append((acc, loss))
+
 
         print(
            f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
     print()
+    model.plot_df = pd.DataFrame(model.epoch_list, columns=['accuracy', 'loss'])
     return avg_loss/counter, avg_acc/counter
 
 
@@ -157,6 +171,9 @@ def test(model, test_lyrics, test_labels):
     return avg_acc/counter, avg_loss/counter
 
 
+def plot_results(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.scatter(x='accuracy', y='loss', title = "training accuracy results table")
+
 def main():
 
     train_lyrics, test_lyrics, train_labels, test_labels = get_data(
@@ -172,7 +189,12 @@ def main():
 
     tf.print("Final Accuracy:", t[0])
 
+    #plt.figure? (i think it depends on type of graph but do research)
+    plot_results(model.plot_df)
+    plt.show()
+
     return
+
 
 
 if __name__ == '__main__':
