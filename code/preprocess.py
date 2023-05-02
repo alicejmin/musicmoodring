@@ -20,8 +20,7 @@ def get_data(file_path):
     stop_words = set(stopwords.words('english'))
 
     lyrics = [[word.lower().strip("!()-',.?*{};:¡\"“‘~…’—–”\\")
-                     for word in song.split() if word not in stop_words] for song in lyrics]
-    
+               for word in song.split() if word not in stop_words] for song in lyrics]
 
     mean = np.mean([len(song) for song in lyrics])
     std = np.std([len(song) for song in lyrics])
@@ -29,9 +28,11 @@ def get_data(file_path):
     upper_bound = mean + 2*std
     lower_bound = mean - 2*std
 
-    indices = np.nonzero([1 if len(song) <= upper_bound and len(song) >= lower_bound else 0 for song in lyrics])[0]
-    lyrics = np.take(lyrics, indices)
-    labels = np.take(labels, indices)
+    indices = np.nonzero([1 if len(song) <= upper_bound and len(
+        song) >= lower_bound else 0 for song in lyrics])[0]
+
+    lyrics = [lyrics[i] for i in indices]
+    labels = [labels[i] for i in indices]
 
     for song in range(len(lyrics)):
         lyrics[song] = lyrics[song][:50]
@@ -57,9 +58,10 @@ def get_data(file_path):
     vocabulary = {w: i for i, w in enumerate(unique, start=1)}
 
     lyrics = [list(map(lambda x: vocabulary[x], song))
-                    for song in lyrics] 
+              for song in lyrics]
 
-    lyrics = tf.keras.preprocessing.sequence.pad_sequences(lyrics, padding='post') # returns np array
+    lyrics = tf.keras.preprocessing.sequence.pad_sequences(
+        lyrics, padding='post')  # returns np array
     print(len(lyrics[0]))
     # total = 1103, 80% = 882, 20% = 221
     train_lyrics, test_lyrics = lyrics[:882], lyrics[882:]
@@ -76,10 +78,10 @@ def main():
     X0, Y0, X1, Y1 = get_data(
         "data/singlelabel.csv")
 
-    # print(X0)
-    # print(Y0)
-    # print(X1)
-    # print(Y1)
+    print(X0)
+    print(Y0)
+    print(X1)
+    print(Y1)
 
     return
 
