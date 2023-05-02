@@ -62,8 +62,10 @@ def get_data(file_path):
 
     lyrics = tf.keras.preprocessing.sequence.pad_sequences(
         lyrics, padding='post')  # returns np array
-    print(len(lyrics[0]))
+    # singlelabel:
     # total = 1103, 80% = 882, 20% = 221
+    # labeled_lyrics
+    # total = 150568, 80% = 120,454, 20% = 30,114
     train_lyrics, test_lyrics = lyrics[:882], lyrics[882:]
     train_labels, test_labels = labels[:882], labels[882:]
 
@@ -73,15 +75,13 @@ def get_data(file_path):
 def main():
     # can delete later -- just for testing
 
-    # LUCY IS IT WORKING YET NOOOOO
-
     X0, Y0, X1, Y1 = get_data(
         "data/singlelabel.csv")
 
     print(X0)
-    print(Y0)
+    # print(Y0)
     print(X1)
-    print(Y1)
+    # print(Y1)
 
     return
 
