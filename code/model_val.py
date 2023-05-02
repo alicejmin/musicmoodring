@@ -9,7 +9,7 @@ class Model(tf.keras.Model):
         super(Model, self).__init__()
 
         self.batch_size = 32
-        self.num_classes = 1 #only predicting one value
+        self.num_classes = 1 # only predicting one value
         self.lr = .001
         self.epochs = 10
         # self.stride = (default is 1 so only need this if want something different?)
@@ -38,10 +38,10 @@ class Model(tf.keras.Model):
         self.LSTM = tf.keras.layers.LSTM(
             self.embedding_size, activation="leaky_relu")  # what size??
         self.drop = tf.keras.layers.Dropout(.5)
-        # self.flat = tf.keras.layers.Flatten()
+        self.flat = tf.keras.layers.Flatten()
         # Dropout
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation=None)])
+            64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='relu')])
 
         # dense
         # paper output is 64
@@ -49,8 +49,8 @@ class Model(tf.keras.Model):
         # self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
 
-        self.optimizer = tf.keras.optimizers.Adam(self.lr)
-        self.loss = tf.keras.losses.CategoricalCrossentropy()
+        self.optimizer = tf.keras.optimizers.Adam(self.lr) # SGD
+        self.loss = tf.keras.losses.MeanSquaredError() # reduction ??
 
     def call(self, inputs):
 
@@ -65,36 +65,36 @@ class Model(tf.keras.Model):
         # 9: (32, 3)
 
         logits = self.embedding(inputs)
-        # print("2:", logits.shape) # [32, 529, 100]
+        # print("2:", logits.shape) 
         logits = self.permute(logits)
-        # print("2.5:", logits.shape) # [32, 100, 529]
+        # print("2.5:", logits.shape)
         logits = self.conv1d(logits)
         # print(logits.shape) #
         logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding)
-        # print("4:", logits.shape) # [32, 50, 16] want: [32, 16, 25] 264?
+        # print("4:", logits.shape) 
         logits = self.permute2(logits)
-        # print("4:", logits.shape) # [32, 50, 16] want: [25, 32, 16]
+        # print("4:", logits.shape) 
         logits = self.LSTM(logits)
         # logits = self.flat(logits)
         logits = self.drop(logits)
-        # print("5:", logits.shape) # [32, 100]
+        # print("5:", logits.shape)
         logits = self.seq(logits)
-        # print("9:", logits.shape) # [32, 3]
         # print(logits)
-
+        # logits = [val for song in logits for val in song] # def not the best way to do this 
+        
+        logits = tf.reshape(logits, [32])
+        
         return logits
 
-    def accuracy(self, logits, labels):
+    def r2_score(self, logits, labels):
 
         # num_correct_classes = 0
         # for song in range(logits.shape[0]):
         #     if tf.argmax(logits[song], axis=-1) == tf.argmax(labels[song]):
         #         num_correct_classes += 1
         # accuracy = num_correct_classes/logits.shape[0]
-       
+
         metric = tfa.metrics.r_square.RSquare()
-        print(labels)
-        print(logits)
         metric.update_state(labels, logits)
         result = metric.result()
 
@@ -105,7 +105,7 @@ def train(model, train_lyrics, train_labels):
 
     # train model -- maybe shuffle inputs -- look at hw2 and hw3
 
-    avg_acc = 0
+    avg_r2 = 0
     avg_loss = 0
     counter = 0
 
@@ -129,24 +129,23 @@ def train(model, train_lyrics, train_labels):
             grads = tape.gradient(loss, model.trainable_variables)
             model.optimizer.apply_gradients(
                 zip(grads, model.trainable_variables))
-        acc = model.accuracy(logits, batch_labels)
+        r_squared = model.r2_score(logits, batch_labels)
 
-        avg_acc += acc
+        avg_r2 += r_squared
         avg_loss += loss
         counter += 1
 
         print(
-            f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
-    # print(logits)
+            f"\r[Train {batch_num+1:4n}/{3764}]\t loss={loss:.3f}\t r_squared: {r_squared:.3f}", end='')
     print()
-    return avg_loss/counter, avg_acc/counter
+    return avg_loss/counter, avg_r2/counter
 
 
 def test(model, test_lyrics, test_labels):
 
     # Tests the model on the test inputs and labels.
 
-    avg_acc = 0
+    avg_r2 = 0
     avg_loss = 0
     counter = 0
     # make test_lyrics.shape[0] + 1?
@@ -158,15 +157,15 @@ def test(model, test_lyrics, test_labels):
         logits = model(batch_lyrics)
         loss = model.loss(batch_labels, logits)
 
-        acc = model.accuracy(logits, batch_labels)
-        avg_acc += acc
+        r2 = model.r2_score(logits, batch_labels)
+        avg_r2 += r2
         avg_loss += loss
         counter += 1
         print(
-            f"\r[Valid {batch_num+1}/{6}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
+            f"\r[Valid {batch_num+1:4n}/{942}]\t loss={loss:.3f}\t acc: {r2:.3f}", end='')
 
     print()
-    return avg_acc/counter, avg_loss/counter
+    return avg_r2/counter, avg_loss/counter
 
 
 def main():
@@ -182,7 +181,7 @@ def main():
 
     t = test(model, test_lyrics, test_labels)
 
-    tf.print("Final Accuracy:", t[0])
+    tf.print("Final R2 Score:", t[0])
 
     return
 
