@@ -15,12 +15,12 @@ class Model(tf.keras.Model):
         self.lr = .001
         self.epochs = 10
         # self.stride = (default is 1 so only need this if want something different?)
-        self.optimizer = tf.keras.optimizers.Adam(
-            learning_rate=self.lr)
         self.padding = "SAME"
         self.embedding_size = 100  # 80? (from paper)
-        self.vocab_size = 150568
+        self.vocab_size = 96272
         self.hidden_size = 40  # 256
+        self.weight_decay = 1e-6
+        self.momentum = 0.9
 
         # the default initializer here is "uniform" we can play around with it
         self.embedding = tf.keras.layers.Embedding(
@@ -38,12 +38,12 @@ class Model(tf.keras.Model):
             (1, 2), input_shape=(529, 64))  # does this do anything??
         # LSTM
         self.LSTM = tf.keras.layers.LSTM(
-            self.embedding_size, activation="leaky_relu")  # what size??
+            40)  # what size??
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
         # Dropout
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='relu')])
+            64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="relu")])
 
         # dense
         # paper output is 64
@@ -51,7 +51,7 @@ class Model(tf.keras.Model):
         # self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
 
-        self.optimizer = tf.keras.optimizers.Adam(self.lr) # SGD
+        self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum, weight_decay=self.weight_decay) # SGD
         self.loss = tf.keras.losses.MeanSquaredError() # reduction ??
 
     def call(self, inputs):
@@ -68,13 +68,13 @@ class Model(tf.keras.Model):
 
         logits = self.embedding(inputs)
         # print("2:", logits.shape) 
-        logits = self.permute(logits)
+        # logits = self.permute(logits)
         # print("2.5:", logits.shape)
         logits = self.conv1d(logits)
         # print(logits.shape) #
         logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding)
         # print("4:", logits.shape) 
-        logits = self.permute2(logits)
+        # logits = self.permute2(logits)
         # print("4:", logits.shape) 
         logits = self.LSTM(logits)
         # logits = self.flat(logits)
@@ -89,12 +89,6 @@ class Model(tf.keras.Model):
         return logits
 
     def r2_score(self, logits, labels):
-
-        # num_correct_classes = 0
-        # for song in range(logits.shape[0]):
-        #     if tf.argmax(logits[song], axis=-1) == tf.argmax(labels[song]):
-        #         num_correct_classes += 1
-        # accuracy = num_correct_classes/logits.shape[0]
 
         metric = tfa.metrics.r_square.RSquare()
         metric.update_state(labels, logits)
@@ -164,7 +158,7 @@ def test(model, test_lyrics, test_labels):
         avg_loss += loss
         counter += 1
         print(
-            f"\r[Valid {batch_num+1:4n}/{942}]\t loss={loss:.3f}\t acc: {r2:.3f}", end='')
+            f"\r[Valid {batch_num+1:4n}/{941}]\t loss={loss:.3f}\t r_squared: {r2:.3f}", end='')
 
     print()
     return avg_r2/counter, avg_loss/counter

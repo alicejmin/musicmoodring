@@ -1,3 +1,4 @@
+from os import terminal_size
 import nltk
 from audioop import avg
 import tensorflow as tf
@@ -36,14 +37,34 @@ def get_data(file_path):
 
     for song in range(len(lyrics)):
         lyrics[song] = lyrics[song][:50]
-
-
-    print("BEFORE", labels)
-    indices = [0 if x == 'Sadness' else 1 if x ==
-               'Tension' else 2 for x in labels]
+    
+    indices = [0 if x == 'Tension' else 1 if x ==
+               'Tenderness' else 2 for x in labels]
+    
+    # tot = list(zip(lyrics, labels))
+    # sad = 0
+    # tender = 0 
+    # tension = 0
+    # for i in tot:
+    #     if i[1] == 0 and sad > 300:
+    #         sad +=1
+    #         tot.remove(i)
+    #     elif i[1] ==1 and tension > 300:
+    #         tension +=1
+    #         tot.remove(i)
+    #     elif i[1] == 2 and tender > 200: 
+    #         tender +=1
+    #         tot.remove(i)
+    #     elif i[1] == 0:
+    #         sad +=1
+    #     elif i[1] ==1:
+    #         tension +=1
+    #     else: 
+    #         tender +=1
+    # lyrics, indices = zip(*tot)
 
     labels = tf.one_hot(indices, 3, dtype=tf.int64)
-    print("AFTER",labels)
+
     # IF WE WANT ONE LIST FOR ALL LYRICS
     # train_lyrics_list = []
     # for x in train_lyrics:
@@ -78,7 +99,7 @@ def main():
     # can delete later -- just for testing
 
     X0, Y0, X1, Y1 = get_data(
-        "data/singlelabel.csv")
+        "data/singlelabel_small.csv")
 
     print(X0)
     # print(Y0)
