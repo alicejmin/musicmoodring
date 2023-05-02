@@ -38,7 +38,7 @@ def get_data(file_path):
         lyrics[song] = lyrics[song][:50]
 
     # indices = [0 if x == 'Sadness' else 1 if x ==
-            #    'Tension' else 2 for x in labels]
+        #    'Tension' else 2 for x in labels]
 
     # labels = tf.one_hot(indices, 3, dtype=tf.int64)
 
@@ -62,9 +62,9 @@ def get_data(file_path):
 
     lyrics = tf.keras.preprocessing.sequence.pad_sequences(
         lyrics, padding='post')  # returns np array
-    #singlelabel:
+    # singlelabel:
     # total = 1103, 80% = 882, 20% = 221
-    #labeled_lyrics
+    # labeled_lyrics
     # total = 150568, 80% = 120,454, 20% = 30,114
     print(len(lyrics))
     train_lyrics, test_lyrics = lyrics[:120454], lyrics[120454:]
