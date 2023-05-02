@@ -37,10 +37,10 @@ def get_data(file_path):
     for song in range(len(lyrics)):
         lyrics[song] = lyrics[song][:50]
 
-    indices = [0 if x == 'Sadness' else 1 if x ==
-               'Tension' else 2 for x in labels]
+    # indices = [0 if x == 'Sadness' else 1 if x ==
+        #    'Tension' else 2 for x in labels]
 
-    labels = tf.one_hot(indices, 3, dtype=tf.int64)
+    # labels = tf.one_hot(indices, 3, dtype=tf.int64)
 
     # IF WE WANT ONE LIST FOR ALL LYRICS
     # train_lyrics_list = []
@@ -62,26 +62,27 @@ def get_data(file_path):
 
     lyrics = tf.keras.preprocessing.sequence.pad_sequences(
         lyrics, padding='post')  # returns np array
-    print(len(lyrics[0]))
+    # singlelabel:
     # total = 1103, 80% = 882, 20% = 221
-    train_lyrics, test_lyrics = lyrics[:882], lyrics[882:]
-    train_labels, test_labels = labels[:882], labels[882:]
+    # labeled_lyrics
+    # total = 150568, 80% = 120,454, 20% = 30,114
+    print(len(lyrics))
+    train_lyrics, test_lyrics = lyrics[:120454], lyrics[120454:]
+    train_labels, test_labels = labels[:120454], labels[120454:]
 
-    return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), train_labels, test_labels
+    return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), (train_labels), (test_labels)
 
 
 def main():
     # can delete later -- just for testing
 
-    # LUCY IS IT WORKING YET NOOOOO
-
     X0, Y0, X1, Y1 = get_data(
-        "data/singlelabel.csv")
+        "data/labeled_lyrics_cleaned.csv")
 
     print(X0)
-    print(Y0)
+    # print(Y0)
     print(X1)
-    print(Y1)
+    # print(Y1)
 
     return
 
