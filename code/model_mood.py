@@ -86,17 +86,45 @@ class Model(tf.keras.Model):
         return logits
 
     def accuracy(self, logits, labels):
-
-        # cross_ent = tf.math.reduce_mean(self.loss(labels, logits)) #.losses or .metrics
-        # perplex = tf.math.exp(cross_ent)
-        # return perplex
-
         num_correct_classes = 0
         for song in range(logits.shape[0]):
-            if tf.argmax(logits[song], axis=-1) == tf.argmax(labels[song]):
+            if tf.argmax(logits[song]) == tf.argmax(labels[song]):
                 num_correct_classes += 1
         accuracy = num_correct_classes/logits.shape[0]
         return accuracy
+    def acc_per_class(self, logits, labels):
+
+        # look at acc dist across different classes 
+
+        correct_tension = 0
+        tot_tension = 0
+        correct_sadness = 0
+        tot_sad = 0
+        correct_tenderness = 0
+        tot_tender = 0
+        for song in range(logits.shape[0]):
+            if tf.argmax(logits[song], axis=-1) == tf.argmax(labels[song]):
+                if tf.argmax(labels[song]).numpy() == 1:
+                    correct_tension += 1
+                    tot_tension +=1
+                elif tf.argmax(labels[song]).numpy() == 0:
+                    correct_sadness += 1
+                    tot_sad+=1
+                else:
+                    tot_tender +=1
+                    correct_tenderness += 1
+            else: 
+                if tf.argmax(labels[song]).numpy() == 1:
+                    tot_tension +=1
+                elif tf.argmax(labels[song]).numpy() == 0:
+                    tot_sad+=1
+                else:
+                    tot_tender +=1
+                
+        acc_tension = correct_tension/tot_tension
+        acc_sadness = correct_sadness/tot_sad
+        acc_tenderness = correct_tenderness/tot_tender
+        return acc_tension, acc_sadness, acc_tenderness
 
 
 def train(model, train_lyrics, train_labels):
@@ -129,6 +157,7 @@ def train(model, train_lyrics, train_labels):
             model.optimizer.apply_gradients(
                 zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
+        tension, sadness, tenderness = model.acc_per_class(logits, batch_labels)
 
         avg_acc += acc
         avg_loss += loss
@@ -136,9 +165,10 @@ def train(model, train_lyrics, train_labels):
         
         model.epoch_list.append((acc, loss))
 
+        print(f"\r[Train {batch_num+1}/{27}]\t tension: {tension:.3f}\t sadness: {sadness:.3f}\t tenderness: {tenderness:.3f}", end='')
 
-        print(
-           f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
+        # print(
+        #    f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
     print()
     model.plot_df = pd.DataFrame(model.epoch_list, columns=['accuracy', 'loss'])
     return avg_loss/counter, avg_acc/counter
