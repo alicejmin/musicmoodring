@@ -38,7 +38,7 @@ class Model(tf.keras.Model):
             64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
 
         self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum, weight_decay=self.weight_decay) # SGD
-        self.loss = tf.keras.losses.CategoricalCrossentropy()
+        # self.loss = tf.keras.losses.CategoricalCrossentropy()
 
     def call(self, inputs):
 
@@ -116,6 +116,9 @@ class Model(tf.keras.Model):
         acc_sadness = correct_sadness/tot_sad
         acc_tenderness = correct_tenderness/tot_tender
         return acc_tension, acc_sadness, acc_tenderness
+    def loss(self, labels, logits): 
+        # penialize wrong answers for sadness and praise correct answers for tension, tenderness 
+        pass
 
 
 def train(model, train_lyrics, train_labels):
