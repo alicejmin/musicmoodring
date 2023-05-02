@@ -66,7 +66,6 @@ def get_data(file_path):
     # total = 1103, 80% = 882, 20% = 221
     # labeled_lyrics
     # total = 150568, 80% = 120,454, 20% = 30,114
-    print(len(lyrics))
     train_lyrics, test_lyrics = lyrics[:120454], lyrics[120454:]
     train_labels, test_labels = labels[:120454], labels[120454:]
 

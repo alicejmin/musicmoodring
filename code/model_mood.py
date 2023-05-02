@@ -46,7 +46,7 @@ class Model(tf.keras.Model):
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
             64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
 
-        self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum, weight_decay=self.weight_decay) # SGD
+        self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum) # SGD
         # self.loss = tf.keras.losses.CategoricalCrossentropy()
 
     def call(self, inputs):
@@ -66,6 +66,8 @@ class Model(tf.keras.Model):
         # logits = self.permute(logits)
         # print("2.5:", logits.shape) # [32, 100, 529]
         logits = self.conv1d(logits)
+        # drop out?
+
         # print(logits.shape) #
         logits = tf.nn.max_pool(logits, 2, strides=2, padding=self.padding)
         # print("4:", logits.shape) # [32, 50, 16] want: [32, 16, 25] 264?
@@ -73,10 +75,9 @@ class Model(tf.keras.Model):
         # print("4:", logits.shape) # [32, 50, 16] want: [25, 32, 16]
 
         # perm here?
-
+        logits = self.flat(logits)
         logits = self.LSTM(logits)
         # logits = self.flat(logits)
-        logits = self.flat(logits)
         logits = self.drop(logits)
         # print("5:", logits.shape) # [32, 100]
         logits = self.seq(logits)
@@ -127,8 +128,17 @@ class Model(tf.keras.Model):
         return acc_tension, acc_sadness, acc_tenderness
     def loss(self, labels, logits): 
         # penialize wrong answers for sadness and praise correct answers for tension, tenderness 
-        pass
-
+        cce = tf.keras.losses.CategoricalCrossentropy()
+        for i in range(logits.shape[0]):
+            copy = logits
+            if tf.argmax(logits[i]) == 0 and tf.argmax(labels[i]) != 0: 
+                # make copy
+                copy = copy.numpy()
+                copy[i][0] = .0001
+                copy = tf.convert_to_tensor(logits)
+        loss = cce(labels, copy)
+        # print(loss)
+        return loss
 
 def train(model, train_lyrics, train_labels):
 
@@ -140,27 +150,28 @@ def train(model, train_lyrics, train_labels):
     
 
     # use train_captions or image_features or both?
-    index_range = tf.random.shuffle(range(len(train_lyrics)))
-    shuffled_lyrics = tf.gather(train_lyrics, index_range)
-    # do these also need to be shuffled?
-    shuffled_labels = tf.gather(train_labels, index_range)
+    # index_range = tf.random.shuffle(range(len(train_lyrics)))
+    # shuffled_lyrics = tf.gather(train_lyrics, index_range)
+    # # do these also need to be shuffled?
+    # shuffled_labels = tf.gather(train_labels, index_range)
 
     # train_lyrics.shape[0] + 1 if tensor
     for batch_num, b1 in enumerate(range(model.batch_size, len(train_lyrics) + 1, model.batch_size)):
         b0 = b1 - model.batch_size
-        batch_lyrics = shuffled_lyrics[b0:b1]
-        batch_labels = shuffled_labels[b0:b1]
+        batch_lyrics = train_lyrics[b0:b1]
+        batch_labels = train_labels[b0:b1]
 
         with tf.GradientTape() as tape:
             logits = model(batch_lyrics)
 
             loss = model.loss(batch_labels, logits)
+            # print(loss)
 
             grads = tape.gradient(loss, model.trainable_variables)
             model.optimizer.apply_gradients(
-                zip(grads, model.trainable_variables))
+            zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
-        tension, sadness, tenderness = model.acc_per_class(logits, batch_labels)
+        # tension, sadness, tenderness = model.acc_per_class(logits, batch_labels)
 
         avg_acc += acc
         avg_loss += loss
@@ -168,11 +179,13 @@ def train(model, train_lyrics, train_labels):
         
         model.epoch_list.append((acc, loss))
 
-        print(f"\r[Train {batch_num+1}/{27}]\t tension: {tension:.3f}\t sadness: {sadness:.3f}\t tenderness: {tenderness:.3f}", end='')
+        # print(f"\r[Train {batch_num+1}/{27}]\t tension: {tension:.3f}\t sadness: {sadness:.3f}\t tenderness: {tenderness:.3f}", end='')
 
-        # print(
-        #    f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
+        print(
+           f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
     print()
+    print(logits)
+    print(batch_labels)
     model.plot_df = pd.DataFrame(model.epoch_list, columns=['accuracy', 'loss'])
     return avg_loss/counter, avg_acc/counter
 
