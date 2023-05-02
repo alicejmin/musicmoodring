@@ -93,11 +93,12 @@ class Model(tf.keras.Model):
         # accuracy = num_correct_classes/logits.shape[0]
        
         metric = tfa.metrics.r_square.RSquare()
+        print(labels)
+        print(logits)
         metric.update_state(labels, logits)
         result = metric.result()
-        
 
-        return result.numpy()
+        return result.numpy() #uses R squared to return dif/acc (?)
 
 
 def train(model, train_lyrics, train_labels):

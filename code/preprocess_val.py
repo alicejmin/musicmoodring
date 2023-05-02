@@ -70,7 +70,7 @@ def get_data(file_path):
     train_lyrics, test_lyrics = lyrics[:120454], lyrics[120454:]
     train_labels, test_labels = labels[:120454], labels[120454:]
 
-    return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), tf.convert_to_tensor(train_labels), tf.convert_to_tensor(test_labels)
+    return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), (train_labels), (test_labels)
 
 
 def main():
