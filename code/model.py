@@ -9,8 +9,13 @@ class Model(tf.keras.Model):
 
         self.batch_size = 32 
         self.num_classes = 3
-        self.lr = .01
-        self.epochs = 10
+        self.lr = 1e-2
+        self.sr = 1e-5
+        self.weight_decay = 1e-6
+        self.momentum = .9
+        self.factor = .2 
+        self.patience = 3
+        self.epochs = 100
         # self.stride = (default is 1 so only need this if want something different?)
         self.optimizer = tf.keras.optimizers.Adam(
             learning_rate=self.lr)
@@ -29,7 +34,7 @@ class Model(tf.keras.Model):
         # flatten?
         self.permute2 = tf.keras.layers.Permute((1, 2), input_shape=(529, 64)) # does this do anything??
         # LSTM
-        self.LSTM = tf.keras.layers.LSTM(self.embedding_size, activation="leaky_relu") # what size??
+        self.LSTM = tf.keras.layers.LSTM(40, activation="leaky_relu") # what size??
         self.drop = tf.keras.layers.Dropout(.5)
         # self.flat = tf.keras.layers.Flatten()
         # Dropout
@@ -41,8 +46,9 @@ class Model(tf.keras.Model):
         # self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
 
-        self.optimizer = tf.keras.optimizers.Adam(self.lr)
+        self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum, weight_decay=self.weight_decay)
         self.loss = tf.keras.losses.CategoricalCrossentropy()
+        self.schedule = tf.keras.callbacks.ReduceLROnPlateau(factor=self.factor, patience=self.patience, verbose=1, mode='min')
 
     def call(self, inputs):
 
@@ -58,13 +64,13 @@ class Model(tf.keras.Model):
 
         logits = self.embedding(inputs) 
         # print("2:", logits.shape) # [32, 529, 100]
-        logits = self.permute(logits) 
+        # logits = self.permute(logits) 
         # print("2.5:", logits.shape) # [32, 100, 529]
         logits = self.conv1d(logits)
         #print(logits.shape) # 
         logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding)
         # print("4:", logits.shape) # [32, 50, 16] want: [32, 16, 25] 264?
-        logits = self.permute2(logits)
+        # logits = self.permute2(logits)
         # print("4:", logits.shape) # [32, 50, 16] want: [25, 32, 16]
         logits = self.LSTM(logits)
         # logits = self.flat(logits)
@@ -88,6 +94,14 @@ class Model(tf.keras.Model):
                 num_correct_classes += 1 
         accuracy = num_correct_classes/logits.shape[0]
         return accuracy
+    
+    def early_stop(self, loss, epoch):
+        # CHANGEEEEE
+        self.scheduler(loss, epoch)
+        self.learning_rate = self.optimizer.param_groups[0]['lr']
+        stop = self.learning_rate < self.stopping_rate
+        
+        return stop
 
 
 
@@ -164,7 +178,9 @@ def main():
 
     for e in range(model.epochs):
         print("epoch", e+1)
-        train(model, train_lyrics, train_labels)
+        loss, _ = train(model, train_lyrics, train_labels)
+        if model.early_stop(loss, e+1):
+            break
 
     t = test(model, test_lyrics, test_labels)
 
