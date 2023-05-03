@@ -3,6 +3,12 @@ import tensorflow as tf
 import numpy as np
 import tensorflow_addons as tfa
 
+# imports for plotting
+import pandas as pd
+import matplotlib.pyplot as plt
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
 
 class Model(tf.keras.Model):
     def __init__(self):
@@ -13,7 +19,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 1 # only predicting one value
         self.lr = .001
-        self.epochs =1 
+        self.epochs = 1 
         # self.stride = (default is 1 so only need this if want something different?)
         self.padding = "SAME"
         self.embedding_size = 100  # 80? (from paper)
@@ -21,6 +27,12 @@ class Model(tf.keras.Model):
         self.hidden_size = 40  # 256
         self.weight_decay = 1e-6
         self.momentum = 0.9
+
+        #for plots
+        self.epoch_list = []
+        self.test_list = []
+        self.plot_df_train = pd.DataFrame()
+        self.plot_df_test = pd.DataFrame()
 
         # the default initializer here is "uniform" we can play around with it
         self.embedding = tf.keras.layers.Embedding(
@@ -132,6 +144,9 @@ def train(model, train_lyrics, train_labels):
         avg_loss += loss
         counter += 1
 
+        model.epoch_list.append((avg_r2, loss))
+        model.plot_df_train = pd.DataFrame(model.epoch_list, columns=['r_squared', 'loss'])
+
         print(
             f"\r[Train {batch_num+1:4n}/{3764}]\t loss={loss:.3f}\t r_squared: {r_squared:.3f}", end='')
     print()
@@ -158,12 +173,23 @@ def test(model, test_lyrics, test_labels):
         avg_r2 += r2
         avg_loss += loss
         counter += 1
+
+        model.test_list.append((avg_r2, loss))
+        model.plot_df_test = pd.DataFrame(model.test_list, columns=['r_squared', 'loss'])
+
         print(
             f"\r[Valid {batch_num+1:4n}/{941}]\t loss={loss:.3f}\t r_squared: {r2:.3f}", end='')
 
     print()
     return avg_r2/(test_lyrics.shape[0]/model.batch_size), avg_loss/(test_lyrics.shape[0]/model.batch_size)
 
+def plot_results_train(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.scatter(x='r_squared', y='loss',
+                         title="r_squared results training")
+
+def plot_results_test(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.scatter(x='r_squared', y='loss',
+                         title="r_squared results testing")
 
 def main():
 
@@ -172,6 +198,7 @@ def main():
 
     model = Model()
 
+
     for e in range(model.epochs):
         print("epoch", e+1)
         train(model, train_lyrics, train_labels)
@@ -179,6 +206,12 @@ def main():
     t = test(model, test_lyrics, test_labels)
 
     tf.print("Final R2 Score:", t[0])
+
+    plot_results_train(model.plot_df_train)
+    plt.show()
+
+    plot_results_test(model.plot_df_test)
+    plt.show()
 
     return
 
