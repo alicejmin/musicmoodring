@@ -8,6 +8,8 @@ class Model(tf.keras.Model):
     def __init__(self):
         super(Model, self).__init__()
 
+        #reduce layer sizes, add dropout, learning rate, fewer epochs?
+
         self.batch_size = 32
         self.num_classes = 1 # only predicting one value
         self.lr = .001
@@ -71,6 +73,7 @@ class Model(tf.keras.Model):
         logits = self.conv1d(logits)
         # print(logits.shape) #
         logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding)
+        # logits = self.drop(logits)
         # print("4:", logits.shape) 
         # logits = self.permute2(logits)
         # print("4:", logits.shape) 
