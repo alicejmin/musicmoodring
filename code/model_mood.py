@@ -27,6 +27,9 @@ class Model(tf.keras.Model):
         self.epoch_list = []
         self.plot_df = pd.DataFrame()
         self.plot_class_df = pd.DataFrame()
+        self.plot_sadness = pd.DataFrame()
+        self.plot_tenderness = pd.DataFrame()
+        self.plot_tension = pd.DataFrame()
 
         # the default initializer here is "uniform" we can play around with it
         self.embedding = tf.keras.layers.Embedding(
@@ -46,7 +49,8 @@ class Model(tf.keras.Model):
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
             64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
 
-        self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum) # SGD
+        self.optimizer = tf.keras.optimizers.experimental.SGD(
+            self.lr, self.momentum)  # SGD
         # self.loss = tf.keras.losses.CategoricalCrossentropy()
 
     def call(self, inputs):
@@ -75,9 +79,9 @@ class Model(tf.keras.Model):
         # print("4:", logits.shape) # [32, 50, 16] want: [25, 32, 16]
 
         # perm here?
-        logits = self.flat(logits)
-        logits = self.LSTM(logits)
         # logits = self.flat(logits)
+        logits = self.LSTM(logits)
+        logits = self.flat(logits)
         logits = self.drop(logits)
         # print("5:", logits.shape) # [32, 100]
         logits = self.seq(logits)
@@ -127,12 +131,13 @@ class Model(tf.keras.Model):
         acc_sadness = correct_sadness/tot_sad
         acc_tenderness = correct_tenderness/tot_tender
         return acc_tension, acc_sadness, acc_tenderness
-    def loss(self, labels, logits): 
-        # penialize wrong answers for sadness and praise correct answers for tension, tenderness 
+
+    def loss(self, labels, logits):
+        # penialize wrong answers for sadness and praise correct answers for tension, tenderness
         cce = tf.keras.losses.CategoricalCrossentropy()
         for i in range(logits.shape[0]):
             copy = logits
-            if tf.argmax(logits[i]) == 0 and tf.argmax(labels[i]) != 0: 
+            if tf.argmax(logits[i]) == 0 and tf.argmax(labels[i]) != 0:
                 # make copy
                 copy = copy.numpy()
                 copy[i][0] = .0001
@@ -140,6 +145,7 @@ class Model(tf.keras.Model):
         loss = cce(labels, copy)
         # print(loss)
         return loss
+
 
 def train(model, train_lyrics, train_labels):
 
@@ -169,7 +175,7 @@ def train(model, train_lyrics, train_labels):
 
             grads = tape.gradient(loss, model.trainable_variables)
             model.optimizer.apply_gradients(
-            zip(grads, model.trainable_variables))
+                zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
 
         tension, sadness, tenderness = model.acc_per_class(
@@ -180,7 +186,6 @@ def train(model, train_lyrics, train_labels):
         avg_loss += loss
         counter += 1
 
-        # for chart
         model.epoch_list.append((acc, loss))
 
         # print(f"\r[Train {batch_num+1}/{27}]\t tension: {tension:.3f}\t sadness: {sadness:.3f}\t tenderness: {tenderness:.3f}", end='')
@@ -191,6 +196,7 @@ def train(model, train_lyrics, train_labels):
     # for charts
     model.plot_df = pd.DataFrame(
         model.epoch_list, columns=['accuracy', 'loss'])
+
     model.plot_class_df = pd.DataFrame({'classes': [
                                        'tension', 'sadness', 'tenderness'], 'accuracy': [tension, sadness, tenderness]})
 
@@ -230,6 +236,21 @@ def plot_results(plot_df: pd.DataFrame) -> None:
                          title="training accuracy results table")
 
 
+def plot_sad(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.line(x='epoch', y='accuracy',
+                      title="sad")
+
+
+def plot_tender(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.line(x='epoch', y='accuracy',
+                      title="tender")
+
+
+def plot_tension(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.line(x='epoch', y='accuracy',
+                      title="tension")
+
+
 # bar chart for each class
 def plot_classes(plot_class_df: pd.DataFrame) -> None:
     plot_class_df.plot.bar(x='classes', y='accuracy',
@@ -243,9 +264,28 @@ def main():
 
     model = Model()
 
+    sad = []
+    tender = []
+    tension_list = []
+
     for e in range(model.epochs):
         print("epoch", e+1)
         train(model, train_lyrics, train_labels)
+
+        # may need to change inputs for acc_per_class
+        sad.append((e, model.acc_per_class(train_lyrics, train_labels)[1]))
+        tender.append((e, model.acc_per_class(train_lyrics, train_labels)[2]))
+        tension_list.append(
+            (e, model.acc_per_class(train_lyrics, train_labels)[0]))
+
+     # for chart
+
+    model.plot_sadness = pd.DataFrame(
+        sad, columns=['epoch', 'accuracy'])
+    model.plot_tenderness = pd.DataFrame(
+        tender, columns=['epoch', 'accuracy'])
+    model.plot_tension = pd.DataFrame(
+        tension_list, columns=['epoch', 'accuracy'])
 
     t = test(model, test_lyrics, test_labels)
 
@@ -256,6 +296,15 @@ def main():
     plt.show()
 
     plot_classes(model.plot_class_df)
+    plt.show()
+
+    plot_sad(model.plot_sadness)
+    plt.show()
+
+    plot_tension(model.plot_tension)
+    plt.show()
+
+    plot_tender(model.plot_tenderness)
     plt.show()
 
     return
