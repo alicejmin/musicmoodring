@@ -66,8 +66,16 @@ def get_data(file_path):
     # total = 1103, 80% = 882, 20% = 221
     # labeled_lyrics
     # total = 150568, 80% = 120,454, 20% = 30,114
-    train_lyrics, test_lyrics = lyrics[:120454], lyrics[120454:]
-    train_labels, test_labels = labels[:120454], labels[120454:]
+
+    index_range = tf.random.shuffle(range(len(lyrics)))
+    shuffled_lyrics = tf.gather(lyrics, index_range)
+    # do these also need to be shuffled?
+    shuffled_labels = tf.gather(labels, index_range)
+    shuffled_labels = [[i] for i in shuffled_labels]
+
+
+    train_lyrics, test_lyrics = shuffled_lyrics[:120454], shuffled_lyrics[120454:]
+    train_labels, test_labels = shuffled_labels[:120454], shuffled_labels[120454:]
 
     return tf.convert_to_tensor(train_lyrics), tf.convert_to_tensor(test_lyrics), tf.convert_to_tensor(train_labels), tf.convert_to_tensor(test_labels)
 

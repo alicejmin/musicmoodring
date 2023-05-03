@@ -11,7 +11,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 1 # only predicting one value
         self.lr = .001
-        self.epochs = 10
+        self.epochs =1 
         # self.stride = (default is 1 so only need this if want something different?)
         self.padding = "SAME"
         self.embedding_size = 100  # 80? (from paper)
@@ -36,7 +36,7 @@ class Model(tf.keras.Model):
             (1, 2), input_shape=(529, 64))  # does this do anything??
         # LSTM
         self.LSTM = tf.keras.layers.LSTM(
-            40)  # what size??
+            100)  # what size??
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
         # Dropout
@@ -49,7 +49,7 @@ class Model(tf.keras.Model):
         # self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
 
-        self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum, weight_decay=self.weight_decay) # SGD
+        self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum) # SGD
         self.loss = tf.keras.losses.MeanSquaredError() # reduction ??
 
     def call(self, inputs):
@@ -75,14 +75,14 @@ class Model(tf.keras.Model):
         # logits = self.permute2(logits)
         # print("4:", logits.shape) 
         logits = self.LSTM(logits)
-        # logits = self.flat(logits)
+        logits = self.flat(logits) # move this? 
         logits = self.drop(logits)
         # print("5:", logits.shape)
         logits = self.seq(logits)
         # print(logits)
         # logits = [val for song in logits for val in song] # def not the best way to do this 
-        
-        logits = tf.reshape(logits, [32])
+        print(logits)
+        # logits = tf.reshape(logits, [32])
         
         return logits
 
@@ -159,7 +159,7 @@ def test(model, test_lyrics, test_labels):
             f"\r[Valid {batch_num+1:4n}/{941}]\t loss={loss:.3f}\t r_squared: {r2:.3f}", end='')
 
     print()
-    return avg_r2/counter, avg_loss/counter
+    return avg_r2/(test_lyrics.shape[0]/model.batch_size), avg_loss/(test_lyrics.shape[0]/model.batch_size)
 
 
 def main():

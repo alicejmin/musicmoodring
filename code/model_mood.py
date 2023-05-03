@@ -15,7 +15,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 3
         self.lr = .001
-        self.epochs = 10
+        self.epochs = 100
         self.weight_decay = 1e-6
         self.momentum = 0.9
         # self.stride = (default is 1 so only need this if want something different?)
@@ -32,22 +32,27 @@ class Model(tf.keras.Model):
         self.embedding = tf.keras.layers.Embedding(
             self.vocab_size, self.embedding_size)
 
+        self.permute = tf.keras.layers.Permute((2, 1), input_shape=(529, 64))
+
         # did some research... top three seem to be HeNormal, Kaiming, and Xavier but dont know which is best
         # I think HeNormal(kaiming) is best, top  seem to be xavier, and he normal
         self.conv1d = tf.keras.layers.Conv1D(
-            16, 2, strides=2, activation="relu")
+            16, 2, strides=2, activation='relu')
+
+        self.maxpool = tf.keras.layers.MaxPool1D(2)
 
         # LSTM
         self.LSTM = tf.keras.layers.LSTM(
-            100, activation='leaky_relu')  # activation? 
+            40, activation='leaky_relu')  # activation? 
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
         # Dropout
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
+            64, activation='relu'), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
 
-        self.optimizer = tf.keras.optimizers.experimental.SGD(self.lr, self.momentum) # SGD
-        # self.loss = tf.keras.losses.CategoricalCrossentropy()
+        self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum) # SGD
+        self.loss = tf.keras.losses.CategoricalCrossentropy()
+        # self.accuracy = tf.keras.metrics.Accuracy()
 
     def call(self, inputs):
 
@@ -62,36 +67,30 @@ class Model(tf.keras.Model):
         # 9: (32, 3)
 
         logits = self.embedding(inputs)
-        # print("2:", logits.shape) # [32, 529, 100]
-        # logits = self.permute(logits)
-        # print("2.5:", logits.shape) # [32, 100, 529]
         logits = self.conv1d(logits)
-        # drop out?
-
-        # print(logits.shape) #
-        logits = tf.nn.max_pool(logits, 2, strides=2, padding=self.padding)
-        # print("4:", logits.shape) # [32, 50, 16] want: [32, 16, 25] 264?
-        # logits = self.permute2(logits)
-        # print("4:", logits.shape) # [32, 50, 16] want: [25, 32, 16]
-
-        # perm here?
-        logits = self.flat(logits)
+        logits = self.maxpool(logits)
+        # logits = tf.nn.max_pool(logits, 3, strides=2, padding=self.padding)
         logits = self.LSTM(logits)
-        # logits = self.flat(logits)
+        logits = self.flat(logits)
         logits = self.drop(logits)
-        # print("5:", logits.shape) # [32, 100]
         logits = self.seq(logits)
-        # print("9:", logits.shape) # [32, 3]
-        # print(logits)
+
+        # logits = self.embedding(inputs)
+        # logits = self.conv1d(logits)
+        # logits = self.maxpool(logits)
+        # # logits = tf.nn.max_pool(logits, 3, strides=2, padding=self.padding)
+        # logits = self.drop(logits)
+        # logits = self.flat(logits)
+        # logits = self.seq(logits)
 
         return logits
 
     def accuracy(self, logits, labels):
         num_correct_classes = 0
-        for song in range(logits.shape[0]):
+        for song in range(self.batch_size):
             if tf.argmax(logits[song]) == tf.argmax(labels[song]):
                 num_correct_classes += 1
-        accuracy = num_correct_classes/logits.shape[0]
+        accuracy = num_correct_classes/self.batch_size
         return accuracy
     def acc_per_class(self, logits, labels):
 
@@ -103,7 +102,7 @@ class Model(tf.keras.Model):
         tot_sad = 0
         correct_tenderness = 0
         tot_tender = 0
-        for song in range(logits.shape[0]):
+        for song in range(self.batch_size):
             if tf.argmax(logits[song], axis=-1) == tf.argmax(labels[song]):
                 if tf.argmax(labels[song]).numpy() == 1:
                     correct_tension += 1
@@ -129,12 +128,19 @@ class Model(tf.keras.Model):
     def loss(self, labels, logits): 
         # penialize wrong answers for sadness and praise correct answers for tension, tenderness 
         cce = tf.keras.losses.CategoricalCrossentropy()
+        print(logits)
         for i in range(logits.shape[0]):
             copy = logits
-            if tf.argmax(logits[i]) == 0 and tf.argmax(labels[i]) != 0: 
+            if tf.argmax(logits[i]) != tf.argmax(labels[i]): 
                 # make copy
+                index = tf.argmax(logits[i]).numpy()
                 copy = copy.numpy()
-                copy[i][0] = .0001
+                copy[i][index] = .0001
+                copy = tf.convert_to_tensor(logits)
+            else: 
+                index = tf.argmax(logits[i]).numpy()
+                copy = copy.numpy()
+                copy[i][index] = .99
                 copy = tf.convert_to_tensor(logits)
         loss = cce(labels, copy)
         # print(loss)
@@ -149,17 +155,17 @@ def train(model, train_lyrics, train_labels):
     counter = 0
     
 
-    # use train_captions or image_features or both?
-    # index_range = tf.random.shuffle(range(len(train_lyrics)))
-    # shuffled_lyrics = tf.gather(train_lyrics, index_range)
-    # # do these also need to be shuffled?
-    # shuffled_labels = tf.gather(train_labels, index_range)
+    #use train_captions or image_features or both?
+    index_range = tf.random.shuffle(range(len(train_lyrics)))
+    shuffled_lyrics = tf.gather(train_lyrics, index_range)
+    # do these also need to be shuffled?
+    shuffled_labels = tf.gather(train_labels, index_range)
 
     # train_lyrics.shape[0] + 1 if tensor
     for batch_num, b1 in enumerate(range(model.batch_size, len(train_lyrics) + 1, model.batch_size)):
         b0 = b1 - model.batch_size
-        batch_lyrics = train_lyrics[b0:b1]
-        batch_labels = train_labels[b0:b1]
+        batch_lyrics = shuffled_lyrics[b0:b1]
+        batch_labels = shuffled_labels[b0:b1]
 
         with tf.GradientTape() as tape:
             logits = model(batch_lyrics)
@@ -168,10 +174,9 @@ def train(model, train_lyrics, train_labels):
             # print(loss)
 
             grads = tape.gradient(loss, model.trainable_variables)
-            model.optimizer.apply_gradients(
-            zip(grads, model.trainable_variables))
+            model.optimizer.apply_gradients(zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
-        # tension, sadness, tenderness = model.acc_per_class(logits, batch_labels)
+        #tension, sadness, tenderness = model.acc_per_class(logits, batch_labels)
 
         avg_acc += acc
         avg_loss += loss
@@ -183,9 +188,9 @@ def train(model, train_lyrics, train_labels):
 
         print(
            f"\r[Train {batch_num+1}/{27}]\t loss={loss:.3f}\t acc: {acc:.3f}", end='')
+    
     print()
-    print(logits)
-    print(batch_labels)
+
     model.plot_df = pd.DataFrame(model.epoch_list, columns=['accuracy', 'loss'])
     return avg_loss/counter, avg_acc/counter
 
@@ -218,7 +223,7 @@ def test(model, test_lyrics, test_labels):
 
 
 def plot_results(plot_df: pd.DataFrame) -> None:
-    plot_df.plot.scatter(x='accuracy', y='loss', title = "training accuracy results table")
+    plot_df.plot(x='loss', y='accuracy', kind='scatter', title = "Training Accuracy Over 100 Epochs")
 
 def main():
 
@@ -226,6 +231,20 @@ def main():
         "data/singlelabel.csv")
 
     model = Model()
+
+    # model.compile(model.optimizer, loss=model.loss, metrics=['accuracy'], steps_per_execution=10)
+
+    # model.fit(
+    #     train_lyrics, train_labels,
+    #     epochs=model.epochs,
+    #     batch_size=model.batch_size,
+    #     validation_split=.1
+    # )
+
+    # model.evaluate(
+    #     test_lyrics, test_labels, 
+    #     batch_size=model.batch_size
+    # )
 
     for e in range(model.epochs):
         print("epoch", e+1)
@@ -235,7 +254,8 @@ def main():
 
     tf.print("Final Accuracy:", t[0])
 
-    #plt.figure? (i think it depends on type of graph but do research)
+    # plt.figure? (i think it depends on type of graph but do research)
+
     plot_results(model.plot_df)
     plt.show()
 
