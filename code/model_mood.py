@@ -15,7 +15,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 3
         self.lr = .001
-        self.epochs = 100
+        self.epochs = 15
         self.weight_decay = 1e-6
         self.momentum = 0.9
         # self.stride = (default is 1 so only need this if want something different?)
