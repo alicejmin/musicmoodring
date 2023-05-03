@@ -73,6 +73,7 @@ class Model(tf.keras.Model):
         logits = self.conv1d(logits)
         # print(logits.shape) #
         logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding)
+        # logits = self.drop(logits)
         # print("4:", logits.shape) 
         # logits = self.permute2(logits)
         # print("4:", logits.shape) 
