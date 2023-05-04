@@ -1,3 +1,4 @@
+from json.encoder import INFINITY
 from preprocess_mood import get_data
 import tensorflow as tf
 import numpy as np
@@ -15,7 +16,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 3
         self.lr = .001
-        self.epochs = 15
+        self.epochs = 30
         self.weight_decay = 1e-6
         self.momentum = 0.9
         # self.stride = (default is 1 so only need this if want something different?)
@@ -44,16 +45,19 @@ class Model(tf.keras.Model):
 
         self.maxpool = tf.keras.layers.MaxPool1D(2)
 
-        # LSTM
+        # LSTM #try using GRU
         self.LSTM = tf.keras.layers.LSTM(
-            40, activation='leaky_relu')  # activation? 
+            40, activation='leaky_relu')  # activation?
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
         # Dropout
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            64, activation='relu'), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
+            64, kernel_regularizer=tf.keras.regularizers.L1(.01), activation='relu'), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
 
-        self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum) # SGD
+        # self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
+        #     64, kernel_regularizer=tf.keras.regularizers.L1(.01), activation='relu'), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation='softmax')])
+
+        self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum)  # SGD
         self.loss = tf.keras.losses.CategoricalCrossentropy()
         # self.accuracy = tf.keras.metrics.Accuracy()
 
@@ -125,9 +129,21 @@ class Model(tf.keras.Model):
                 else:
                     tot_tender += 1
 
-        acc_tension = correct_tension/tot_tension
-        acc_sadness = correct_sadness/tot_sad
-        acc_tenderness = correct_tenderness/tot_tender
+        if tot_tension == 0:
+            acc_tension = 0
+        else:
+            acc_tension = correct_tension/tot_tension
+        # sometimes this gives a zero error...
+        if tot_sad == 0:
+            acc_sadness = 0
+        else:
+            acc_sadness = correct_sadness/tot_sad
+        if tot_tension == 0:
+            acc_tension = 0
+        else:
+            acc_tenderness = correct_tenderness/tot_tender
+        
+        
         return acc_tension, acc_sadness, acc_tenderness
 
     def loss(self, labels, logits):
@@ -136,13 +152,13 @@ class Model(tf.keras.Model):
         print(logits)
         for i in range(logits.shape[0]):
             copy = logits
-            if tf.argmax(logits[i]) != tf.argmax(labels[i]): 
+            if tf.argmax(logits[i]) != tf.argmax(labels[i]):
                 # make copy
                 index = tf.argmax(logits[i]).numpy()
                 copy = copy.numpy()
                 copy[i][index] = .0001
                 copy = tf.convert_to_tensor(logits)
-            else: 
+            else:
                 index = tf.argmax(logits[i]).numpy()
                 copy = copy.numpy()
                 copy[i][index] = .99
@@ -160,7 +176,7 @@ def train(model, train_lyrics, train_labels):
     avg_loss = 0
     counter = 0
 
-    #use train_captions or image_features or both?
+    # use train_captions or image_features or both?
     index_range = tf.random.shuffle(range(len(train_lyrics)))
     shuffled_lyrics = tf.gather(train_lyrics, index_range)
     # do these also need to be shuffled?
@@ -179,7 +195,8 @@ def train(model, train_lyrics, train_labels):
             # print(loss)
 
             grads = tape.gradient(loss, model.trainable_variables)
-            model.optimizer.apply_gradients(zip(grads, model.trainable_variables))
+            model.optimizer.apply_gradients(
+                zip(grads, model.trainable_variables))
         acc = model.accuracy(logits, batch_labels)
 
         tension, sadness, tenderness = model.acc_per_class(
@@ -281,13 +298,21 @@ def main():
     # )
 
     # model.evaluate(
-    #     test_lyrics, test_labels, 
+    #     test_lyrics, test_labels,
     #     batch_size=model.batch_size
     # )
 
+    #early stopping
+    # curr_valid_loss = INFINITY
     for e in range(model.epochs):
         print("epoch", e+1)
         train(model, train_lyrics, train_labels)
+        # new_valid_loss = test(model, test_lyrics, test_labels)[1]
+
+        # if (train(model, train_lyrics, train_labels)[0]) > curr_valid_loss:
+        #     break
+        # else:
+        #     curr_valid_loss = new_valid_loss
 
         # may need to change inputs for acc_per_class
         sad.append((e, model.acc_per_class(train_lyrics, train_labels)[1]))
@@ -295,6 +320,14 @@ def main():
         tension_list.append(
             (e, model.acc_per_class(train_lyrics, train_labels)[0]))
 
+        # curr_valid_loss = inf
+        # for i in range(n_epochs):
+        # train model()
+        # new_valid_loss = model.get_test_loss()
+        # if new_valid_loss > curr_valid_loss:
+        # break
+        # else:
+        # curr_valid_loss = new_valid_loss
      # for chart
 
     model.plot_sadness = pd.DataFrame(
