@@ -96,3 +96,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+#transfer learing
+#add layers on top of bert--> would change project quite a bit, might take up ram, use as alternative, try other transformers as well

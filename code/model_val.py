@@ -1,3 +1,4 @@
+from json.encoder import INFINITY
 from preprocess_val import get_data
 import tensorflow as tf
 import numpy as np
@@ -5,17 +6,25 @@ import tensorflow_addons as tfa
 import gensim
 from gensim.models import Word2Vec
 
+# imports for plotting
+import pandas as pd
+import matplotlib.pyplot as plt
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
+# TRY regularization as slides show, then try implementing early stopping, then try reducing parameters and also loss penalty thingy
+
 
 class Model(tf.keras.Model):
     def __init__(self):
         super(Model, self).__init__()
 
-        #reduce layer sizes, add dropout, learning rate, fewer epochs?
+        # reduce layer sizes, add dropout, learning rate, fewer epochs?
 
         self.batch_size = 32
-        self.num_classes = 1 # only predicting one value
+        self.num_classes = 1  # only predicting one value
         self.lr = .001
-        self.epochs =40
+        self.epochs = 50
         # self.stride = (default is 1 so only need this if want something different?)
         self.padding = "SAME"
         self.embedding_size = 100  # 80? (from paper)
@@ -23,6 +32,12 @@ class Model(tf.keras.Model):
         self.hidden_size = 40  # 256
         self.weight_decay = 1e-6
         self.momentum = 0.9
+
+        # for plots
+        self.epoch_list = []
+        self.test_list = []
+        self.plot_df_train = pd.DataFrame()
+        self.plot_df_test = pd.DataFrame()
 
         # the default initializer here is "uniform" we can play around with it
         self.embedding = tf.keras.layers.Embedding(
@@ -41,14 +56,20 @@ class Model(tf.keras.Model):
         # flatten?
         self.permute2 = tf.keras.layers.Permute(
             (1, 2), input_shape=(529, 64))  # does this do anything??
-        # LSTM
-        self.LSTM = tf.keras.layers.LSTM(
-            100)  # what size??
+        
+        # LSTM or #GRU
+        # self.LSTM = tf.keras.layers.LSTM(
+        #     100)  # what size??
+        self.GRU = tf.keras.layers.GRU(100)
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
         # Dropout
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            128, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="relu")])
+            64, activation="relu"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="sigmoid")])
+
+        #fliped  --> relu and tanh (made tanh sigmoid)
+        # self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
+        #     64, kernel_regularizer=tf.keras.regularizers.L1(.01), activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="relu")])
 
         # dense
         # paper output is 64
@@ -56,8 +77,8 @@ class Model(tf.keras.Model):
         # self.dropout2 = tf.keras.layers.Dropout(.5)
         # dense
 
-        self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum) # SGD
-        self.loss = tf.keras.losses.MeanSquaredError() # reduction ??
+        self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum)  # SGD
+        self.loss = tf.keras.losses.MeanSquaredError()  # reduction ??
 
     def call(self, inputs):
 
@@ -71,26 +92,28 @@ class Model(tf.keras.Model):
         # 8: (32, 256)
         # 9: (32, 3)
 
-        logits = self.embedding(inputs) 
-        # print("2:", logits.shape) 
+        logits = self.embedding(inputs)
+        # print("2:", logits.shape)
         # logits = self.permute(logits)
         # print("2.5:", logits.shape)
         logits = self.conv1d(logits)
         # print(logits.shape) #
         logits = tf.nn.max_pool(logits, 2, strides=None, padding=self.padding)
         # logits = self.drop(logits)
-        # print("4:", logits.shape) 
+        # print("4:", logits.shape)
         # logits = self.permute2(logits)
-        # print("4:", logits.shape) 
-        logits = self.LSTM(logits)
-        logits = self.flat(logits) # move this? 
+        # print("4:", logits.shape)
+        # logits = self.LSTM(logits)
+        logits = self.GRU(logits)
+        logits = self.flat(logits)  # move this?
         logits = self.drop(logits)
         # print("5:", logits.shape)
         logits = self.seq(logits)
         # print(logits)
-        # logits = [val for song in logits for val in song] # def not the best way to do this 
+        # logits = [val for song in logits for val in song] # def not the best way to do this
+        # print(logits)
         # logits = tf.reshape(logits, [32])
-        
+
         return logits
 
     def r2_score(self, logits, labels):
@@ -99,7 +122,7 @@ class Model(tf.keras.Model):
         metric.update_state(labels, logits)
         result = metric.result()
 
-        return result.numpy() #uses R squared to return dif/acc (?)
+        return result.numpy()  # uses R squared to return dif/acc (?)
 
 
 def train(model, train_lyrics, train_labels):
@@ -136,6 +159,10 @@ def train(model, train_lyrics, train_labels):
         avg_loss += loss
         counter += 1
 
+        model.epoch_list.append((r_squared, loss))
+        model.plot_df_train = pd.DataFrame(
+            model.epoch_list, columns=['r_squared', 'loss'])
+
         print(
             f"\r[Train {batch_num+1:4n}/{3764}]\t loss={loss:.3f}\t r_squared: {r_squared:.3f}", end='')
     print()
@@ -162,11 +189,26 @@ def test(model, test_lyrics, test_labels):
         avg_r2 += r2
         avg_loss += loss
         counter += 1
+
+        model.test_list.append((r2, loss))
+        model.plot_df_test = pd.DataFrame(
+            model.test_list, columns=['r_squared', 'loss'])
+
         print(
             f"\r[Valid {batch_num+1:4n}/{941}]\t loss={loss:.3f}\t r_squared: {r2:.3f}", end='')
 
     print()
     return avg_r2/(test_lyrics.shape[0]/model.batch_size), avg_loss/(test_lyrics.shape[0]/model.batch_size)
+
+
+def plot_results_train(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.scatter(x='r_squared', y='loss',
+                         title="r_squared results training")
+
+
+def plot_results_test(plot_df: pd.DataFrame) -> None:
+    plot_df.plot.scatter(x='r_squared', y='loss',
+                         title="r_squared results testing")
 
 
 def main():
@@ -179,10 +221,19 @@ def main():
     for e in range(model.epochs):
         print("epoch", e+1)
         train(model, train_lyrics, train_labels)
+        
+        #early stopping
+        
 
     t = test(model, test_lyrics, test_labels)
 
     tf.print("Final R2 Score:", t[0])
+
+    plot_results_train(model.plot_df_train)
+    plt.show()
+
+    plot_results_test(model.plot_df_test)
+    plt.show()
 
     return
 
