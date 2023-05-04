@@ -2,6 +2,8 @@ from preprocess_val import get_data
 import tensorflow as tf
 import numpy as np
 import tensorflow_addons as tfa
+import gensim
+from gensim.models import Word2Vec
 
 
 class Model(tf.keras.Model):
@@ -13,7 +15,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 1 # only predicting one value
         self.lr = .001
-        self.epochs =1 
+        self.epochs =40
         # self.stride = (default is 1 so only need this if want something different?)
         self.padding = "SAME"
         self.embedding_size = 100  # 80? (from paper)
@@ -24,7 +26,10 @@ class Model(tf.keras.Model):
 
         # the default initializer here is "uniform" we can play around with it
         self.embedding = tf.keras.layers.Embedding(
-            self.vocab_size, self.embedding_size, embeddings_initializer="uniform")
+            self.vocab_size, self.embedding_size, mask_zero=True)
+
+
+        # self.embedding = Word2Vec (sentences, min count=l, size=300, workers=2, window=5, iter=30)
 
         self.permute = tf.keras.layers.Permute((2, 1), input_shape=(529, 64))
 
@@ -43,7 +48,7 @@ class Model(tf.keras.Model):
         self.flat = tf.keras.layers.Flatten()
         # Dropout
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            64, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="relu")])
+            128, activation="tanh"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="relu")])
 
         # dense
         # paper output is 64
@@ -66,7 +71,7 @@ class Model(tf.keras.Model):
         # 8: (32, 256)
         # 9: (32, 3)
 
-        logits = self.embedding(inputs)
+        logits = self.embedding(inputs) 
         # print("2:", logits.shape) 
         # logits = self.permute(logits)
         # print("2.5:", logits.shape)
@@ -84,7 +89,6 @@ class Model(tf.keras.Model):
         logits = self.seq(logits)
         # print(logits)
         # logits = [val for song in logits for val in song] # def not the best way to do this 
-        print(logits)
         # logits = tf.reshape(logits, [32])
         
         return logits
