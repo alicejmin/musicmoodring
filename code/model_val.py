@@ -21,7 +21,7 @@ class Model(tf.keras.Model):
         self.padding = "SAME"
         self.embedding_size = 100  #Paper had 80
         self.vocab_size = 96272
-        self.hidden_size = 40  # 256
+        self.hidden_size = 50  # 256
         self.weight_decay = 1e-6
         self.momentum = 0.9
 
@@ -46,14 +46,13 @@ class Model(tf.keras.Model):
             (1, 2), input_shape=(529, 64))
         
         # LSTM or #GRU
-        # self.LSTM = tf.keras.layers.LSTM(
-        #     100)  # what size??
-        self.GRU = tf.keras.layers.GRU(100)
+        self.LSTM = tf.keras.layers.LSTM(100)  # what size??
+        #self.GRU = tf.keras.layers.GRU(100)
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
         # Dropout
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            64, activation="relu"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="sigmoid")])
+            128, activation="relu"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="sigmoid")])
 
         #fliped  --> relu and tanh (made tanh sigmoid)
         # self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
@@ -91,8 +90,8 @@ class Model(tf.keras.Model):
         # print("4:", logits.shape)
         # logits = self.permute2(logits)
         # print("4:", logits.shape)
-        # logits = self.LSTM(logits)
-        logits = self.GRU(logits)
+        logits = self.LSTM(logits)
+        # logits = self.GRU(logits)
         logits = self.flat(logits)  # move this?
         logits = self.drop(logits)
         # print("5:", logits.shape)
