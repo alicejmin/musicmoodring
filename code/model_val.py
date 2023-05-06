@@ -3,6 +3,8 @@ from preprocess_val import get_data
 import tensorflow as tf
 import numpy as np
 import tensorflow_addons as tfa
+import gensim
+from gensim.models import Word2Vec
 
 # imports for plotting
 import pandas as pd
@@ -35,7 +37,10 @@ class Model(tf.keras.Model):
 
         # the default initializer here is "uniform" we can play around with it
         self.embedding = tf.keras.layers.Embedding(
-            self.vocab_size, self.embedding_size, embeddings_initializer="uniform")
+            self.vocab_size, self.embedding_size, mask_zero=True)
+
+
+        # self.embedding = Word2Vec (sentences, min count=l, size=300, workers=2, window=5, iter=30)
 
         self.permute = tf.keras.layers.Permute((2, 1), input_shape=(529, 64))
         self.conv1d = tf.keras.layers.Conv1D(
