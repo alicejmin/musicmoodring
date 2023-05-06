@@ -3,9 +3,6 @@ from preprocess_val import get_data
 import tensorflow as tf
 import numpy as np
 import tensorflow_addons as tfa
-import gensim
-from gensim.models import Word2Vec
-
 # imports for plotting
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,9 +18,8 @@ class Model(tf.keras.Model):
         self.num_classes = 1  # only predicting one value
         self.lr = .001
         self.epochs = 40
-        # self.stride = (default is 1 so only need this if want something different?)
         self.padding = "SAME"
-        self.embedding_size = 100  # 80? (from paper)
+        self.embedding_size = 100  #Paper had 80
         self.vocab_size = 96272
         self.hidden_size = 40  # 256
         self.weight_decay = 1e-6
