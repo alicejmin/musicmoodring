@@ -10,19 +10,15 @@ import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
-# TRY regularization as slides show, then try implementing early stopping, then try reducing parameters and also loss penalty thingy
-
 
 class Model(tf.keras.Model):
     def __init__(self):
         super(Model, self).__init__()
 
-        # reduce layer sizes, add dropout, learning rate, fewer epochs?
-
         self.batch_size = 32
         self.num_classes = 1  # only predicting one value
         self.lr = .001
-        self.epochs = 50
+        self.epochs = 40
         # self.stride = (default is 1 so only need this if want something different?)
         self.padding = "SAME"
         self.embedding_size = 100  # 80? (from paper)
@@ -42,15 +38,11 @@ class Model(tf.keras.Model):
             self.vocab_size, self.embedding_size, embeddings_initializer="uniform")
 
         self.permute = tf.keras.layers.Permute((2, 1), input_shape=(529, 64))
-
-        # did some research... top three seem to be HeNormal, Kaiming, and Xavier but dont know which is best
-        # I think HeNormal(kaiming) is best, top  seem to be xavier, and he normal
         self.conv1d = tf.keras.layers.Conv1D(
             16, 2, strides=2, padding=self.padding, activation="relu", kernel_initializer="HeNormal")
 
-        # flatten?
         self.permute2 = tf.keras.layers.Permute(
-            (1, 2), input_shape=(529, 64))  # does this do anything??
+            (1, 2), input_shape=(529, 64))
         
         # LSTM or #GRU
         # self.LSTM = tf.keras.layers.LSTM(
@@ -215,10 +207,7 @@ def main():
 
     for e in range(model.epochs):
         print("epoch", e+1)
-        train(model, train_lyrics, train_labels)
-        
-        #early stopping
-        
+        train(model, train_lyrics, train_labels)        
 
     t = test(model, test_lyrics, test_labels)
 

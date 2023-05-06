@@ -37,9 +37,6 @@ class Model(tf.keras.Model):
             self.vocab_size, self.embedding_size)
 
         self.permute = tf.keras.layers.Permute((2, 1), input_shape=(529, 64))
-
-        # did some research... top three seem to be HeNormal, Kaiming, and Xavier but dont know which is best
-        # I think HeNormal(kaiming) is best, top  seem to be xavier, and he normal
         self.conv1d = tf.keras.layers.Conv1D(
             16, 2, strides=2, activation='relu')
 
@@ -85,7 +82,7 @@ class Model(tf.keras.Model):
         # logits = self.embedding(inputs)
         # logits = self.conv1d(logits)
         # logits = self.maxpool(logits)
-        # # logits = tf.nn.max_pool(logits, 3, strides=2, padding=self.padding)
+        # logits = tf.nn.max_pool(logits, 3, strides=2, padding=self.padding)
         # logits = self.drop(logits)
         # logits = self.flat(logits)
         # logits = self.seq(logits)
@@ -133,7 +130,6 @@ class Model(tf.keras.Model):
             acc_tension = 0
         else:
             acc_tension = correct_tension/tot_tension
-        # sometimes this gives a zero error...
         if tot_sad == 0:
             acc_sadness = 0
         else:
@@ -303,16 +299,9 @@ def main():
     # )
 
     #early stopping
-    # curr_valid_loss = INFINITY
     for e in range(model.epochs):
         print("epoch", e+1)
         train(model, train_lyrics, train_labels)
-        # new_valid_loss = test(model, test_lyrics, test_labels)[1]
-
-        # if (train(model, train_lyrics, train_labels)[0]) > curr_valid_loss:
-        #     break
-        # else:
-        #     curr_valid_loss = new_valid_loss
 
         # may need to change inputs for acc_per_class
         sad.append((e, model.acc_per_class(train_lyrics, train_labels)[1]))
@@ -320,14 +309,6 @@ def main():
         tension_list.append(
             (e, model.acc_per_class(train_lyrics, train_labels)[0]))
 
-        # curr_valid_loss = inf
-        # for i in range(n_epochs):
-        # train model()
-        # new_valid_loss = model.get_test_loss()
-        # if new_valid_loss > curr_valid_loss:
-        # break
-        # else:
-        # curr_valid_loss = new_valid_loss
      # for chart
 
     model.plot_sadness = pd.DataFrame(
@@ -341,7 +322,6 @@ def main():
 
     tf.print("Final Accuracy:", t[0])
 
-    # plt.figure? (i think it depends on type of graph but do research)
     plot_results(model.plot_df)
     plt.show()
 
