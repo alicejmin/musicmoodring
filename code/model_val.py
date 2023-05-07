@@ -24,7 +24,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 1  # only predicting one value
         self.lr = .001
-        self.epochs = 30
+        self.epochs = 50
         # self.stride = (default is 1 so only need this if want something different?)
         self.padding = "SAME"
         self.embedding_size = 100  # 80? (from paper)
