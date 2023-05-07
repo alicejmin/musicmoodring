@@ -15,8 +15,8 @@ def get_data(file_path):
     lyrics = data['lyrics']
     labels = data['label']
 
-    # IF WE WANT EACH SET OF LYRICS TO HAVE ITS OWN LIST
-
+    # Puts each set of lyrics into own list
+    # clean data
     stop_words = set(stopwords.words('english'))
 
     lyrics = [[word.lower().strip("!()-',.?*{};:¡\"“‘~…’—–”\\")
@@ -28,6 +28,7 @@ def get_data(file_path):
     upper_bound = mean + 2*std
     lower_bound = mean - 2*std
 
+    # even out data inputs (by length)
     indices = np.nonzero([1 if len(song) <= upper_bound and len(
         song) >= lower_bound else 0 for song in lyrics])[0]
 
@@ -37,12 +38,7 @@ def get_data(file_path):
     for song in range(len(lyrics)):
         lyrics[song] = lyrics[song][:50]
 
-    # indices = [0 if x == 'Sadness' else 1 if x ==
-        #    'Tension' else 2 for x in labels]
-
-    # labels = tf.one_hot(indices, 3, dtype=tf.int64)
-
-    # IF WE WANT ONE LIST FOR ALL LYRICS
+    # If we wanted one list of all lyrics we could do it this way:
     # train_lyrics_list = []
     # for x in train_lyrics:
     #     train_lyrics_list.append(x.split())
@@ -50,6 +46,7 @@ def get_data(file_path):
     # for y in test_lyrics:
     #     test_lyrics_list.append(y.split())
 
+    # remove duplicate songs, cleans data some more
     unique = []
     for song in lyrics:
         unique.extend(song)
@@ -60,19 +57,20 @@ def get_data(file_path):
     lyrics = [list(map(lambda x: vocabulary[x], song))
               for song in lyrics]
 
+    # pad songs for tensor conversion
     lyrics = tf.keras.preprocessing.sequence.pad_sequences(
         lyrics, padding='post')  # returns np array
-    # singlelabel:
+
+    # labeled_lyrics_clean (math):
     # total = 1103, 80% = 882, 20% = 221
     # labeled_lyrics
     # total = 150568, 80% = 120,454, 20% = 30,114
 
+    # batch data
     index_range = tf.random.shuffle(range(len(lyrics)))
     shuffled_lyrics = tf.gather(lyrics, index_range)
-    # do these also need to be shuffled?
     shuffled_labels = tf.gather(labels, index_range)
     shuffled_labels = [[i] for i in shuffled_labels]
-
 
     train_lyrics, test_lyrics = shuffled_lyrics[:120454], shuffled_lyrics[120454:]
     train_labels, test_labels = shuffled_labels[:120454], shuffled_labels[120454:]
@@ -81,21 +79,12 @@ def get_data(file_path):
 
 
 def main():
-    # can delete later -- just for testing
-
+    # this method is mainly used for testing
     X0, Y0, X1, Y1 = get_data(
         "data/labeled_lyrics_cleaned.csv")
-
-    print(X0)
-    # print(Y0)
-    print(X1)
-    # print(Y1)
 
     return
 
 
 if __name__ == '__main__':
     main()
-
-#transfer learing
-#add layers on top of bert--> would change project quite a bit, might take up ram, use as alternative, try other transformers as well
