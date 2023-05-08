@@ -303,28 +303,33 @@ def test(model, test_lyrics, test_labels):
 
 # loss vs. accuracy scatter plot
 def plot_results(plot_df: pd.DataFrame) -> None:
+    '''plots accuracy vs. loss for training data scatter plot'''
     plot_df.plot.scatter(x='accuracy', y='loss',
                          title="training accuracy results table")
 
 
 # Following three functions show individual accuracy per class
 def plot_sad(plot_df: pd.DataFrame) -> None:
+    '''plots epoch vs. accuracy for sad data'''
     plot_df.plot.line(x='epoch', y='accuracy',
                       title="sad")
 
 
 def plot_tender(plot_df: pd.DataFrame) -> None:
+    '''plots epoch vs. accuracy for tenderness data'''
     plot_df.plot.line(x='epoch', y='accuracy',
                       title="tender")
 
 
 def plot_tension(plot_df: pd.DataFrame) -> None:
+    '''plots epoch vs. accuracy for tension data'''
     plot_df.plot.line(x='epoch', y='accuracy',
                       title="tension")
 
 
 # bar chart for each class
 def plot_classes(plot_class_df: pd.DataFrame) -> None:
+    '''plots bar chart to compare the accuracy of each class'''
     plot_class_df.plot.bar(x='classes', y='accuracy',
                            title="accuracy per class")
 

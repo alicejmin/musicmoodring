@@ -57,9 +57,9 @@ class Model(tf.keras.Model):
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
 
-        #sigmoid activation for values from 0 to 1 (constraint given in dataset)
+        # sigmoid activation for values from 0 to 1 (constraint given in dataset)
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            128, activation="relu"), tf.keras.layers.Dropout(.5), 
+            128, activation="relu"), tf.keras.layers.Dropout(.5),
             tf.keras.layers.Dense(self.num_classes, activation="sigmoid")])
 
         self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum)
@@ -100,7 +100,7 @@ class Model(tf.keras.Model):
         Returns:
         - result: the R-squared metric value
         """
-        
+
         metric = tfa.metrics.r_square.RSquare()
         metric.update_state(labels, logits)
         result = metric.result()
@@ -209,11 +209,13 @@ def test(model, test_lyrics, test_labels):
 
 # functions for charts
 def plot_results_train(plot_df: pd.DataFrame) -> None:
+    '''uses r_squared and loss inputs to graph loss vs. r_squared training results'''
     plot_df.plot.scatter(x='r_squared', y='loss',
                          title="r_squared results training")
 
 
 def plot_results_test(plot_df: pd.DataFrame) -> None:
+    '''uses r_squared and loss inputs to graph loss vs. r_squared testing results'''
     plot_df.plot.scatter(x='r_squared', y='loss',
                          title="r_squared results testing")
 
