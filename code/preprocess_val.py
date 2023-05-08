@@ -10,6 +10,19 @@ from nltk.corpus import stopwords
 
 
 def get_data(file_path):
+    """
+    Reads data from a csv file and preprocesses it for training and testing.
+
+    Args:
+    file_path (str): The file path to the csv file containing the data.
+
+    Returns:
+    Tuple of four tensors:
+    - train_lyrics: Tensor containing the preprocessed training lyrics.
+    - test_lyrics: Tensor containing the preprocessed testing lyrics.
+    - train_labels: Tensor containing the training labels.
+    - test_labels: Tensor containing the testing labels.
+    """
     data = pd.read_csv(file_path)
 
     lyrics = data['lyrics']

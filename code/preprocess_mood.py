@@ -11,6 +11,21 @@ from nltk.corpus import stopwords
 
 
 def get_data(file_path):
+    """
+    The get_data function reads data from a CSV file.
+    It performs preprocessing by removing stopwords, punctuation, and converting all words to lowercase. 
+    The 'lyrics' data is padded and the 'label' data is one-hot encoded. 
+    Finally it returns training and test data. 
+
+    Args:
+    file_path (str): The path to the CSV file containing the data.
+
+    Returns:
+    train_lyrics (tf.Tensor): A tensor containing the training data as padded and indexed sequences of words.
+    test_lyrics (tf.Tensor): A tensor containing the test data as padded and indexed sequences of words.
+    train_labels (tf.Tensor): A tensor containing the one-hot encoded training labels.
+    test_labels (tf.Tensor): A tensor containing the one-hot encoded test labels.
+    """
     data = pd.read_csv(file_path)
 
     lyrics = data['lyrics']
