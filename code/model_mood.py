@@ -11,6 +11,13 @@ register_matplotlib_converters()
 
 class Model(tf.keras.Model):
     def __init__(self):
+        """
+        Initializes the Model instance with values for model hyperparameters, embedding layer, 
+        convolutional layer, max pooling layer, LSTM layer, dropout layer, flatten layer, 
+        and sequential layer. Also initializes the optimizer and loss function as well as 
+        dataframes for model visualization.
+        """
+
         super(Model, self).__init__()
 
         # for model
@@ -18,12 +25,11 @@ class Model(tf.keras.Model):
         self.num_classes = 3
         self.lr = .001
         self.epochs = 50
-        self.weight_decay = 1e-6
         self.momentum = 0.9
         self.padding = "SAME"
         self.embedding_size = 100
         self.vocab_size = 15245
-        self.hidden_size = 40
+        self.hidden_size = 64
         # for plot
         self.epoch_list = []
         self.plot_df = pd.DataFrame()
@@ -52,6 +58,16 @@ class Model(tf.keras.Model):
         self.loss = tf.keras.losses.CategoricalCrossentropy()
 
     def call(self, inputs):
+        """
+        Defines the forward pass of the Model by applying each layer in sequence
+        to the input tensor.
+
+        Args:
+        inputs: A tensor representing the input sequences of the songs.
+
+        Returns:
+        logits: A tensor representing the probabilities of mood based on lyrics.
+        """
 
         # model
         logits = self.embedding(inputs)
@@ -65,8 +81,18 @@ class Model(tf.keras.Model):
         return logits
 
     def accuracy(self, logits, labels):
-        # accuracy function based on number of correctly guessed classes
-        # uses one hot encoded label vectors
+        """
+        Computes the accuracy of the Model based on number of correctly guessed classes
+        using one hot encoded label vectors.
+
+        Args:
+        logits (tf.Tensor): A tensor representing the predicted logits.
+        labels (tf.Tensor): A tensor representing the true labels.
+
+        Returns:
+        accuracy (float): The computed accuracy of the Model.
+        """
+
         num_correct_classes = 0
         for song in range(self.batch_size):
             if tf.argmax(logits[song]) == tf.argmax(labels[song]):
@@ -75,9 +101,20 @@ class Model(tf.keras.Model):
         return accuracy
 
     def acc_per_class(self, logits, labels):
+        """
+        Computes the accuracy of the Model for each class looking at the accuracy distribution
+        across the different mood labels: sadness, tension, and tenderness.
+        Used mainly for testing and graphing purposes.
 
-        # look at accuracy distribution across different classes -
-        # mainly for testing and graphing purposes
+        Args:
+        logits (tf.Tensor): A tensor representing the predicted logits.
+        labels (tf.Tensor): A tensor representing the true labels.
+
+        Returns:
+        acc_tension (float): The computed accuracy of the Model for the 'tension' class.
+        acc_sadness (float): The computed accuracy of the Model for the 'sadness' class.
+        acc_tenderness (float): The computed accuracy of the Model for the 'tenderness' class.
+        """
         correct_tension = 0
         tot_tension = 0
         correct_sadness = 0
@@ -103,7 +140,7 @@ class Model(tf.keras.Model):
                 else:
                     tot_tender += 1
 
-        # hadnling 0 case
+        # handling 0 case
         if tot_tension == 0:
             acc_tension = 0
         else:
@@ -120,8 +157,17 @@ class Model(tf.keras.Model):
         return acc_tension, acc_sadness, acc_tenderness
 
     def loss(self, labels, logits):
-        # penialize wrong answers for sadness
-        # praise correct answers for tension, tenderness
+        """
+        Computes the loss of the Model given the true labels and predicted logits.
+        The model penializes wrong answers for sadness and praise correct answers for tension and tenderness.
+
+        Args:
+        labels (tf.Tensor): A tensor representing the true labels.
+        logits (tf.Tensor): A tensor representing the predicted logits.
+
+        Returns:
+        loss (tf.Tensor): A tensor representing the computed loss of the Model.
+        """
         # model has learned to always guess sadness so we made this more custom
         # loss function to handle that
         cce = tf.keras.losses.CategoricalCrossentropy()
@@ -145,7 +191,20 @@ class Model(tf.keras.Model):
 
 
 def train(model, train_lyrics, train_labels):
+    """
+    The method trains the model based on the training dataset and uses the forward and backward pass.
+    It trains for one epoch. It shuffles the train_lyrics and train_labels, then splits the data into 
+    batches and trains each batch. For each batch, it computes the loss, gradients, accuracy, and accuracy per class. 
+    It also adds the accuracy and loss to the epoch list. After training, it sets up dataframes for charts/plots.
+    
+    Args:
+    model: the model to be trained
+    train_lyrics: the training lyrics as a tensor
+    train_labels: the training labels as a tensor
 
+    Returns: average loss and accuracy over all batches
+    
+    """
     # trains our model based on the training data set
     # uses forward and backward pass
     # trains for one epoch
@@ -203,8 +262,18 @@ def train(model, train_lyrics, train_labels):
 
 
 def test(model, test_lyrics, test_labels):
+    """
+    Tests the model on the test inputs and labels.
 
-    # Tests the model on the test inputs and labels.
+    Args:
+    - model: the trained model to be tested
+    - test_lyrics: the lyrics to be used as inputs for testing the model
+    - test_labels: the corresponding labels for the test lyrics
+
+    Returns:
+    - avg_acc: the average accuracy of the model on the test data
+    - avg_loss: the average loss of the model on the test data
+    """
     avg_acc = 0
     avg_loss = 0
     counter = 0
@@ -233,28 +302,33 @@ def test(model, test_lyrics, test_labels):
 
 # loss vs. accuracy scatter plot
 def plot_results(plot_df: pd.DataFrame) -> None:
+    '''plots accuracy vs. loss for training data scatter plot'''
     plot_df.plot.scatter(x='accuracy', y='loss',
                          title="training accuracy results table")
 
 
 # Following three functions show individual accuracy per class
 def plot_sad(plot_df: pd.DataFrame) -> None:
+    '''plots epoch vs. accuracy for sad data'''
     plot_df.plot.line(x='epoch', y='accuracy',
                       title="sad")
 
 
 def plot_tender(plot_df: pd.DataFrame) -> None:
+    '''plots epoch vs. accuracy for tenderness data'''
     plot_df.plot.line(x='epoch', y='accuracy',
                       title="tender")
 
 
 def plot_tension(plot_df: pd.DataFrame) -> None:
+    '''plots epoch vs. accuracy for tension data'''
     plot_df.plot.line(x='epoch', y='accuracy',
                       title="tension")
 
 
 # bar chart for each class
 def plot_classes(plot_class_df: pd.DataFrame) -> None:
+    '''plots bar chart to compare the accuracy of each class'''
     plot_class_df.plot.bar(x='classes', y='accuracy',
                            title="accuracy per class")
 

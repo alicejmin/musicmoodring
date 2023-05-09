@@ -12,6 +12,12 @@ register_matplotlib_converters()
 
 class Model(tf.keras.Model):
     def __init__(self):
+        """
+        Initializes the Model instance with values for model hyperparameters, embedding layer, 
+        convolutional layer, max pooling layer, LSTM layer, dropout layer, flatten layer, 
+        and sequential layer. Also initializes the optimizer and loss function as well as 
+        dataframes for model visualization.
+        """
         super(Model, self).__init__()
 
         # for model
@@ -23,7 +29,7 @@ class Model(tf.keras.Model):
         self.padding = "SAME"
         self.embedding_size = 100
         self.vocab_size = 96272
-        self.hidden_size = 50
+        self.hidden_size = 128
         self.momentum = 0.9  # used in optimzer
 
         # for plots
@@ -51,13 +57,24 @@ class Model(tf.keras.Model):
         self.drop = tf.keras.layers.Dropout(.5)
         self.flat = tf.keras.layers.Flatten()
 
+        # sigmoid activation for values from 0 to 1 (constraint given in dataset)
         self.seq = tf.keras.Sequential([tf.keras.layers.Dense(
-            128, activation="relu"), tf.keras.layers.Dropout(.5), tf.keras.layers.Dense(self.num_classes, activation="sigmoid")])
+            128, activation="relu"), tf.keras.layers.Dropout(.5),
+            tf.keras.layers.Dense(self.num_classes, activation="sigmoid")])
 
         self.optimizer = tf.keras.optimizers.SGD(self.lr, self.momentum)
         self.loss = tf.keras.losses.MeanSquaredError()
 
     def call(self, inputs):
+        """
+        Passes the input tensor through the model's layers and returns the output logits.
+
+        Args:
+        - inputs: the input tensor to be passed through the model's layers
+
+        Returns:
+        - logits: the output logits of the model after layers
+        """
 
         logits = self.embedding(inputs)
         logits = self.conv1d(logits)
@@ -71,9 +88,19 @@ class Model(tf.keras.Model):
         return logits
 
     def r2_score(self, logits, labels):
+        """
+        Calculates the R-squared metric for the model's predictions.
+        R_squared served as out accuracy for this model.
+        Higher r_squared scores indicated more optimal/better trained results.
 
-        # R_squared served as out accuracy for this model
-        # higher r_squared scores indicated more optimal/better trained results
+        Args:
+        - logits: the model's output logits
+        - labels: the ground truth labels
+
+        Returns:
+        - result: the R-squared metric value
+        """
+
         metric = tfa.metrics.r_square.RSquare()
         metric.update_state(labels, logits)
         result = metric.result()
@@ -82,9 +109,19 @@ class Model(tf.keras.Model):
 
 
 def train(model, train_lyrics, train_labels):
+    """
+    Trains the model for one epoch on the given training inputs and labels. 
+    Uses forwards and backwards pass.
 
-    # train model for one epoch
-    # uses forwards and backwards pass
+    Args:
+    - model: the model to be trained
+    - train_lyrics: the lyrics to be used as inputs for training the model
+    - train_labels: the corresponding labels for the training lyrics
+
+    Returns:
+    - avg_loss: the average loss of the model on the training data
+    - avg_r2: the average r2 score of the model on the training data
+    """
 
     avg_r2 = 0
     avg_loss = 0
@@ -129,8 +166,18 @@ def train(model, train_lyrics, train_labels):
 
 
 def test(model, test_lyrics, test_labels):
+    """
+    Tests the model on the test data and calculates the average R-squared and loss based on valence scores.
 
-    # Tests the model on the test inputs and labels (testing data)
+    Args:
+    - model: the trained model to be tested
+    - test_lyrics: a numpy array of lyrics to be used as inputs for testing the model
+    - test_labels: a numpy array of corresponding valence scores for the test lyrics
+
+    Returns:
+    - avg_r2: the average R-squared of the model on the test data
+    - avg_loss: the average loss of the model on the test data
+    """
 
     avg_r2 = 0
     avg_loss = 0
@@ -162,11 +209,13 @@ def test(model, test_lyrics, test_labels):
 
 # functions for charts
 def plot_results_train(plot_df: pd.DataFrame) -> None:
+    '''uses r_squared and loss inputs to graph loss vs. r_squared training results'''
     plot_df.plot.scatter(x='r_squared', y='loss',
                          title="r_squared results training")
 
 
 def plot_results_test(plot_df: pd.DataFrame) -> None:
+    '''uses r_squared and loss inputs to graph loss vs. r_squared testing results'''
     plot_df.plot.scatter(x='r_squared', y='loss',
                          title="r_squared results testing")
 
