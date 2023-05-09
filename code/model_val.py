@@ -29,7 +29,7 @@ class Model(tf.keras.Model):
         self.padding = "SAME"
         self.embedding_size = 100
         self.vocab_size = 96272
-        self.hidden_size = 50
+        self.hidden_size = 128
         self.momentum = 0.9  # used in optimzer
 
         # for plots
