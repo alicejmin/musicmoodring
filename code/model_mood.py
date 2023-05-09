@@ -17,7 +17,7 @@ class Model(tf.keras.Model):
         self.batch_size = 32
         self.num_classes = 3
         self.lr = .001
-        self.epochs = 30
+        self.epochs = 50
         self.weight_decay = 1e-6
         self.momentum = 0.9
         self.padding = "SAME"
