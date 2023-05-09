@@ -10,6 +10,7 @@ For classification(model_mood.py): loss: .979; accuracy: .536
 For regression(model_val.py): loss: .037; r_squared: .134
 
 See our paper for more information and detailed results! 
+It is here: https://docs.google.com/document/d/1d1i7YizwJB2cLHz_VM3CIthxRhxcG_OisTWcJ18-It0/edit?usp=sharing
 
 Please note: Our larger dataset is too large to upload to git. Please download it yourself and you will be able to run our code. Here is the link:
  https://www.kaggle.com/datasets/edenbd/150k-lyrics-labeled-with-spotify-valence?resource=download.
