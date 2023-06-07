@@ -34,6 +34,7 @@ After adjusting optimizers and hyperparameters and training for 50 epochs, our d
 
 For classification, we would like to test this model on a larger dataset to see if it will predict more accurately, however, we were unable to find an adequate dataset to attempt this while working on the project. Future work might utilize a dataset that has more diverse emotions and lyrics to mitigate our issue with similarity of emotions. For regression, we would like to use a pre-trained word embedding, such as word2vec or BERT. We tried to implement this towards the end of our project, but were unsuccessful given the amount of time we had. Finally, we could train with an even larger dataset or using more than one label, such as adding arousal. Additionally, in the future we would want to add audio data to our set in the hopes of increasing prediction accuracy. This would be a form of data we have not worked with yet and would prove to be a fun challenge.
 
+## More 
 See our paper for more information and detailed results! 
 It is here: https://docs.google.com/document/d/1d1i7YizwJB2cLHz_VM3CIthxRhxcG_OisTWcJ18-It0/edit?usp=sharing
 
