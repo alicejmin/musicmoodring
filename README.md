@@ -1,7 +1,7 @@
 # Music Mood Ring
 
 ## Intro
-With the popularization of digital music streaming services, music characterization has grown in popularity so that users can simply request a mood or genre and receive song recommendations. Our project tackles a multi-class classification problem and a regression task; Using supervised learning to predict the mood of a song based on its lyrics, we have created a model to help users find music based on a desired mood category and a musical positivity score (valence). The model references the paper Music Mood Detection Based On Audio And Lyrics With Deep Neural Net, which we have modified to only consider lyrics. This project could be used to make playlists on Spotify (or other music platforms) or radio genres. Ultimately, it would help users find music in a mood category of their choosing.
+With the popularization of digital music streaming services, music characterization has grown in popularity so that users can simply request a mood or genre and receive song recommendations. Our project tackles a multi-class classification problem and a regression task in Natural Language Processing; Using supervised learning to predict the mood of a song based on its lyrics, we have created a model to help users find music based on a desired mood category and a musical positivity score (valence). The model references the paper Music Mood Detection Based On Audio And Lyrics With Deep Neural Net, which we have modified to only consider lyrics. This project could be used to make playlists on Spotify (or other music platforms) or radio genres. Ultimately, it would help users find music in a mood category of their choosing.
 
 ## Methodology
 ### Model
